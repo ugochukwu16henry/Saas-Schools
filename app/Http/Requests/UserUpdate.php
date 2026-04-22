@@ -38,4 +38,30 @@ class UserUpdate extends FormRequest
             'phone2' => 'Telephone',
         ];
     }
+
+    /**
+     * Get the data to be validated from the request.
+     * Fixes PHP 8.1+ compatibility issue with file uploads
+     */
+    public function validationData()
+    {
+        // Build validation data manually to avoid file conversion errors
+        $data = [];
+        
+        foreach (array_keys($this->rules()) as $field) {
+            if ($field === 'photo') {
+                // Only include photo if it's actually provided
+                if ($this->hasFile('photo')) {
+                    $data['photo'] = $this->file('photo');
+                }
+            } else {
+                // For other fields, use the regular input method
+                if ($this->has($field)) {
+                    $data[$field] = $this->input($field);
+                }
+            }
+        }
+        
+        return $data;
+    }
 }

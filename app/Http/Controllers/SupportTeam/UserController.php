@@ -72,7 +72,10 @@ class UserController extends Controller
         $data['name'] = ucwords($req->name);
         $data['user_type'] = $user_type;
         $data['photo'] = Qs::getDefaultUserImage();
-        $data['code'] = strtoupper(Str::random(10));
+        
+        // Generate unique code: includes timestamp + random string for better uniqueness
+        // Format: timestamp(8) + random(8) = e.g., 17456789ABCDEF12
+        $data['code'] = strtoupper(dechex(intval(microtime(true) * 10000)) . Str::random(8));
 
         $user_is_staff = in_array($user_type, Qs::getStaff());
         $user_is_teamSA = in_array($user_type, Qs::getTeamSA());

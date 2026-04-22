@@ -5,6 +5,9 @@ namespace App\Http\Requests;
 use App\Helpers\Qs;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * @property mixed $user
+ */
 class UserRequest extends FormRequest
 {
 
@@ -63,12 +66,14 @@ class UserRequest extends FormRequest
     protected function getValidatorInstance()
     {
         if($this->method() === 'POST'){
-            $input = $this->all();
-
-            $input['user_type'] = Qs::decodeHash($input['user_type']);
+            $input = $this->only(array_merge(array_keys($this->rules()), ['user_type']));
+            
+            // Decode the user_type if present
+            if(isset($input['user_type'])) {
+                $input['user_type'] = Qs::decodeHash($input['user_type']);
+            }
 
             $this->getInputSource()->replace($input);
-
         }
 
         if($this->method() === 'PUT'){
@@ -76,6 +81,31 @@ class UserRequest extends FormRequest
         }
 
         return parent::getValidatorInstance();
+    }
 
+    /**
+     * Get the data to be validated from the request.
+     * Fixes PHP 8.1+ compatibility issue with file uploads
+     */
+    public function validationData()
+    {
+        // Build validation data manually to avoid file conversion errors
+        $data = [];
+        
+        foreach (array_keys($this->rules()) as $field) {
+            if ($field === 'photo') {
+                // Only include photo if it's actually provided
+                if ($this->hasFile('photo')) {
+                    $data['photo'] = $this->file('photo');
+                }
+            } else {
+                // For other fields, use the regular input method
+                if ($this->has($field)) {
+                    $data[$field] = $this->input($field);
+                }
+            }
+        }
+        
+        return $data;
     }
 }
