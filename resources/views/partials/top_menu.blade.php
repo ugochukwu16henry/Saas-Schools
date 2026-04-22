@@ -1,14 +1,9 @@
 <div class="navbar navbar-expand-md navbar-dark">
-    <div class="mt-2 mr-5">
+    <div class="navbar-brand mt-1 mr-5">
         <a href="{{ route('dashboard') }}" class="d-inline-block">
-        <h4 class="text-bold text-white">{{ Qs::getSystemName() }}</h4>
+            <img src="{{ asset('global_assets/images/riseflow-logo.png') }}" alt="{{ Qs::getSystemName() }}" style="height:40px; width:auto; object-fit:contain;">
         </a>
     </div>
-  {{--  <div class="navbar-brand">
-        <a href="index.html" class="d-inline-block">
-            <img src="{{ asset('global_assets/images/logo_light.png') }}" alt="">
-        </a>
-    </div>--}}
 
     <div class="d-md-none">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-mobile">
@@ -33,6 +28,11 @@
 			<span class="navbar-text ml-md-3 mr-md-auto"></span>
 
         <ul class="navbar-nav">
+            <li class="nav-item d-flex align-items-center mr-2">
+                <button class="theme-toggle-btn" id="theme-toggle" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </li>
 
             <li class="nav-item dropdown dropdown-user">
                 <a href="#" class="navbar-nav-link dropdown-toggle" data-toggle="dropdown">

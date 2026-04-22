@@ -6,7 +6,10 @@
 
         <section class="container pt-3">
             <div class="mh-topbar">
-                <div class="mh-brand">SaaS Schools</div>
+                <div class="mh-brand">
+                    <img src="{{ asset('global_assets/images/riseflow-logo.png') }}" alt="RiseFlow" style="height:36px; width:auto; object-fit:contain; vertical-align:middle; margin-right:6px;">
+                    RiseFlow
+                </div>
                 <div class="mh-top-links">
                     <a href="#features">Features</a>
                     <a href="#pricing">Pricing</a>
@@ -14,6 +17,9 @@
                     <a href="mailto:support@saas-schools.com?subject=Book%20a%20Demo">Book a Demo</a>
                     <a href="{{ route('school.register') }}">Get Started</a>
                     <a href="{{ route('platform.login') }}">Platform Admin</a>
+                    <button class="theme-toggle-btn" id="theme-toggle-home" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">
+                        <span id="theme-icon-home">🌙</span>
+                    </button>
                     <a href="{{ route('login') }}" class="btn btn-sm saas-btn-primary">Sign in</a>
                 </div>
             </div>

@@ -9,6 +9,9 @@
 <link href="{{ asset('assets/css/marketing-auth.css') }}" rel="stylesheet" type="text/css">
 <!-- /global stylesheets -->
 
+<!-- Dark / Light mode toggle (early, before render) -->
+<script src="{{ asset('assets/js/theme-toggle.js') }}"></script>
+
 <!-- Core JS files -->
 <script src="{{ asset('global_assets/js/main/jquery.min.js') }} "></script>
 <script src="{{ asset('global_assets/js/main/bootstrap.bundle.min.js') }} "></script>
