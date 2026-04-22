@@ -27,6 +27,13 @@
                                 </div>
                                 @endif
 
+                                @if (session('status'))
+                                <div class="alert alert-success alert-styled-left alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                                    {{ session('status') }}
+                                </div>
+                                @endif
+
 
                             <div class="form-group ">
                                 <input type="text" class="form-control" name="identity" value="{{ old('identity') }}" placeholder="Login ID or Email">
@@ -55,6 +62,10 @@
                            {{-- <div class="form-group">
                                 <a href="#" class="btn btn-light btn-block"><i class="icon-home"></i> Back to Home</a>
                             </div>--}}
+
+                            <div class="text-center text-muted mt-2">
+                                New school? <a href="{{ route('school.register') }}">Register your school</a>
+                            </div>
 
 
                         </div>

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use App\User;
 use Eloquent;
 
 class StaffRecord extends Eloquent
 {
+    use BelongsToSchool;
     protected $fillable = ['code', 'emp_date', 'user_id'];
 
     public function user()

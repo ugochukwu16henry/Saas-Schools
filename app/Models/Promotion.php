@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use App\User;
 use Eloquent;
 
 class Promotion extends Eloquent
 {
+    use BelongsToSchool;
     protected $fillable = ['from_class', 'from_section', 'to_class', 'to_section', 'grad', 'student_id', 'from_session', 'to_session', 'status'];
 
     public function student()

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use Eloquent;
 
 class TimeTable extends Eloquent
 {
+    use BelongsToSchool;
     protected $fillable = ['ttr_id', 'ts_id', 'exam_date', 'day', 'timestamp_from', 'timestamp_to', 'subject_id',];
 
     public function time_slot()

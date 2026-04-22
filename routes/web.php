@@ -6,8 +6,20 @@ Auth::routes();
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
 
+// School self-registration (public)
+Route::get('/register/school', 'SchoolRegistrationController@create')->name('school.register');
+Route::post('/register/school', 'SchoolRegistrationController@store')->name('school.register.store');
 
-Route::group(['middleware' => 'auth'], function () {
+// Billing (Paystack)
+Route::post('/paystack/webhook', 'Billing\PaystackController@webhook')->name('paystack.webhook');
+Route::group(['middleware' => ['auth', 'tenant']], function () {
+    Route::get('/billing/prompt',      'Billing\PaystackController@prompt')->name('billing.prompt');
+    Route::get('/billing/initialize',  'Billing\PaystackController@initialize')->name('billing.initialize');
+    Route::get('/billing/callback',    'Billing\PaystackController@callback')->name('billing.callback');
+});
+
+
+Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
 
     Route::get('/', 'HomeController@dashboard')->name('home');
     Route::get('/home', 'HomeController@dashboard')->name('home');
