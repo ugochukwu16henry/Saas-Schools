@@ -15,7 +15,10 @@
 <body>
 <div class="navbar navbar-expand-md navbar-dark" style="background:#1e293b;">
     <div class="navbar-brand wmin-200">
-        <span class="font-weight-semibold">SaaS Schools Platform</span>
+        <a href="{{ route('platform.dashboard') }}" class="d-inline-flex align-items-center text-white" style="gap:8px; text-decoration:none;">
+            <img src="{{ asset('global_assets/images/riseflow-logo.png') }}" alt="RiseFlow" style="height:32px; width:auto; object-fit:contain;">
+            <span class="font-weight-semibold">RiseFlow Platform</span>
+        </a>
     </div>
 
     <div class="d-md-none">

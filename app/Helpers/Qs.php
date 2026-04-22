@@ -256,26 +256,45 @@ class Qs
         return round(pow(1024, $base - floor($base)), $precision) .' '. $suffixes[floor($base)];
     }
 
-    public static function getSetting($type)
+    public static function getSetting($type, $default = null)
     {
-        return Setting::where('type', $type)->first()->description;
+        $setting = Setting::where('type', $type)->first();
+        if ($setting && $setting->description !== null) {
+            return $setting->description;
+        }
+
+        if ($default !== null) {
+            return $default;
+        }
+
+        $fallbacks = [
+            'system_name' => config('app.name', 'RiseFlow'),
+            'system_title' => 'RiseFlow',
+            'system_email' => 'support@riseflow.com',
+            'current_session' => date('Y').'-'.(date('Y') + 1),
+        ];
+
+        return $fallbacks[$type] ?? '';
     }
 
     public static function getCurrentSession()
     {
-        return self::getSetting('current_session');
+        return self::getSetting('current_session', date('Y').'-'.(date('Y') + 1));
     }
 
     public static function getNextSession()
     {
         $oy = self::getCurrentSession();
+        if (!str_contains($oy, '-')) {
+            return date('Y').'-'.(date('Y') + 1);
+        }
         $old_yr = explode('-', $oy);
         return ++$old_yr[0].'-'.++$old_yr[1];
     }
 
     public static function getSystemName()
     {
-        return self::getSetting('system_name');
+        return self::getSetting('system_name', config('app.name', 'RiseFlow'));
     }
 
     public static function findMyChildren($parent_id)

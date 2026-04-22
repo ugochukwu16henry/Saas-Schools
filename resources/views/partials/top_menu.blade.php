@@ -1,7 +1,10 @@
 <div class="navbar navbar-expand-md navbar-dark">
     <div class="navbar-brand mt-1 mr-5">
-        <a href="{{ route('dashboard') }}" class="d-inline-block">
-            <img src="{{ asset('global_assets/images/riseflow-logo.png') }}" alt="{{ Qs::getSystemName() }}" style="height:40px; width:auto; object-fit:contain;">
+        <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center" style="gap:8px; text-decoration:none;">
+            @if(!empty($currentSchool->logo))
+                <img src="{{ $currentSchool->logo }}" alt="{{ !empty($currentSchool->name) ? $currentSchool->name : 'School' }}" style="height:40px; width:auto; object-fit:contain; max-width:140px;">
+            @endif
+            <span class="text-white font-weight-semibold" style="line-height:1.1;">{{ !empty($currentSchool->name) ? $currentSchool->name : 'School Dashboard' }}</span>
         </a>
     </div>
 
@@ -26,14 +29,7 @@
         </ul>
 
 			<span class="navbar-text ml-md-3 mr-md-auto"></span>
-
         <ul class="navbar-nav">
-            <li class="nav-item d-flex align-items-center mr-2">
-                <button class="theme-toggle-btn" id="theme-toggle" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">
-                    <span id="theme-icon">🌙</span>
-                </button>
-            </li>
-
             <li class="nav-item dropdown dropdown-user">
                 <a href="#" class="navbar-nav-link dropdown-toggle" data-toggle="dropdown">
                     <img style="width: 38px; height:38px;" src="{{ Auth::user()->photo }}" class="rounded-circle" alt="photo">
