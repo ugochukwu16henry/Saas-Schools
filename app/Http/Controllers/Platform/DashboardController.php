@@ -62,7 +62,7 @@ class DashboardController extends Controller
             });
         }
 
-        $schools = $query->latest()->paginate(20)->withQueryString();
+        $schools = $query->latest()->paginate(20)->appends($request->query());
 
         $stats = [
             'total_schools' => School::count(),

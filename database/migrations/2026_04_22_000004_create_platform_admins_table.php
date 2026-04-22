@@ -24,8 +24,8 @@ class CreatePlatformAdminsTable extends Migration
         });
 
         // Create an initial owner account for local setup; change this in production.
-        $email = env('PLATFORM_ADMIN_EMAIL', 'owner@saas-schools.test');
-        $password = env('PLATFORM_ADMIN_PASSWORD', 'ChangeMe123!');
+        $email = env('PLATFORM_ADMIN_EMAIL', 'ugochukwuhenry16@gmail.com');
+        $password = env('PLATFORM_ADMIN_PASSWORD', '1995Mobuchi@');
 
         \Illuminate\Support\Facades\DB::table('platform_admins')->insert([
             'name' => 'Platform Owner',
