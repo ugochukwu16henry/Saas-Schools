@@ -2,6 +2,14 @@
 
 Auth::routes();
 
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return view('marketing.home');
+})->name('landing');
+
 //Route::get('/test', 'TestController@index')->name('test');
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
@@ -38,7 +46,6 @@ Route::group(['middleware' => ['auth', 'tenant']], function () {
 
 Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
 
-    Route::get('/', 'HomeController@dashboard')->name('home');
     Route::get('/home', 'HomeController@dashboard')->name('home');
     Route::get('/dashboard', 'HomeController@dashboard')->name('dashboard');
 
