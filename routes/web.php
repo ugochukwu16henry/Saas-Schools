@@ -10,6 +10,23 @@ Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use')
 Route::get('/register/school', 'SchoolRegistrationController@create')->name('school.register');
 Route::post('/register/school', 'SchoolRegistrationController@store')->name('school.register.store');
 
+// Platform admin auth and dashboard
+Route::group(['prefix' => 'platform'], function () {
+    Route::middleware('guest:platform')->group(function () {
+        Route::get('/login', 'Platform\AuthController@showLogin')->name('platform.login');
+        Route::post('/login', 'Platform\AuthController@login')->name('platform.login.post');
+    });
+
+    Route::middleware('auth:platform')->group(function () {
+        Route::post('/logout', 'Platform\AuthController@logout')->name('platform.logout');
+        Route::get('/dashboard', 'Platform\DashboardController@index')->name('platform.dashboard');
+        Route::get('/schools/{school}', 'Platform\DashboardController@show')->name('platform.schools.show');
+        Route::patch('/schools/{school}/suspend', 'Platform\DashboardController@suspend')->name('platform.schools.suspend');
+        Route::patch('/schools/{school}/activate', 'Platform\DashboardController@activate')->name('platform.schools.activate');
+        Route::delete('/schools/{school}', 'Platform\DashboardController@destroy')->name('platform.schools.destroy');
+    });
+});
+
 // Billing (Paystack)
 Route::post('/paystack/webhook', 'Billing\PaystackController@webhook')->name('paystack.webhook');
 Route::group(['middleware' => ['auth', 'tenant']], function () {

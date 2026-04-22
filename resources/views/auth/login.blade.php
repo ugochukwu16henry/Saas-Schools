@@ -67,6 +67,10 @@
                                 New school? <a href="{{ route('school.register') }}">Register your school</a>
                             </div>
 
+                            <div class="text-center text-muted mt-1">
+                                Platform owner? <a href="{{ route('platform.login') }}">Platform admin login</a>
+                            </div>
+
 
                         </div>
                     </div>

@@ -41,6 +41,11 @@ return [
             'provider' => 'users',
         ],
 
+        'platform' => [
+            'driver' => 'session',
+            'provider' => 'platform_admins',
+        ],
+
         'api' => [
             'driver' => 'token',
             'provider' => 'users',
@@ -70,6 +75,11 @@ return [
             'model' => App\User::class,
         ],
 
+        'platform_admins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\PlatformAdmin::class,
+        ],
+
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
@@ -94,6 +104,12 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
+            'table' => 'password_resets',
+            'expire' => 60,
+        ],
+
+        'platform_admins' => [
+            'provider' => 'platform_admins',
             'table' => 'password_resets',
             'expire' => 60,
         ],
