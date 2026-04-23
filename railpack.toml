@@ -1,5 +1,2 @@
 [build]
 providers = ["php"]
-
-[build.php]
-version = "8.3"
