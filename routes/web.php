@@ -81,6 +81,11 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
         Route::put('/change_password', 'MyAccountController@change_pass')->name('my_account.change_pass');
     });
 
+    Route::group(['prefix' => 'ai'], function () {
+        Route::get('/announcement-draft', 'Ai\AnnouncementPageController@index')->name('ai.announcement.page');
+        Route::post('/announcement-draft', 'Ai\AnnouncementController@generate')->name('ai.announcement.generate');
+    });
+
     /*************** Support Team *****************/
     Route::group(['namespace' => 'SupportTeam',], function(){
 
