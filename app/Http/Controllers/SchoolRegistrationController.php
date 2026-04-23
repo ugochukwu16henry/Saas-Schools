@@ -113,11 +113,14 @@ class SchoolRegistrationController extends Controller
 
     private function uniqueUsername(string $name): string
     {
+        // Username must be globally unique, so we bypass tenant scopes.
         $base = Str::slug($name, '');
-        $username = strtolower(substr($base, 0, 20));
+        $base = $base !== '' ? strtolower($base) : 'user';
+        $username = substr($base, 0, 20);
         $i = 1;
-        while (User::where('username', $username)->exists()) {
-            $username = strtolower(substr($base, 0, 18)) . $i++;
+        while (User::withoutGlobalScopes()->where('username', $username)->exists()) {
+            $suffix = (string) $i++;
+            $username = substr($base, 0, 20 - strlen($suffix)) . $suffix;
         }
         return $username;
     }
