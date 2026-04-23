@@ -13,6 +13,10 @@ class CreateAiAuditLogsTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('ai_audit_logs')) {
+            Schema::drop('ai_audit_logs');
+        }
+
         Schema::create('ai_audit_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('ai_request_id');

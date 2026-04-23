@@ -13,10 +13,14 @@ class CreateAiRequestsTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('ai_requests')) {
+            Schema::drop('ai_requests');
+        }
+
         Schema::create('ai_requests', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('school_id')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedInteger('user_id')->nullable();
             $table->string('feature', 80)->index();
             $table->string('provider', 40)->nullable();
             $table->string('model', 120)->nullable();
