@@ -9582,5 +9582,9 @@
         "ext-zip": "*"
     },
     "platform-dev": {},
+    "platform-overrides": {
+        "php": "8.2.30",
+        "php-64bit": "8.2.30"
+    },
     "plugin-api-version": "2.9.0"
 }
