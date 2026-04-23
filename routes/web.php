@@ -10,6 +10,10 @@ Route::get('/', function () {
     return view('marketing.home');
 })->name('landing');
 
+Route::get('/healthz', function () {
+    return response()->json(['status' => 'ok'], 200);
+})->name('healthz');
+
 //Route::get('/test', 'TestController@index')->name('test');
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
