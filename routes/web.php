@@ -18,6 +18,27 @@ Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use')
 Route::get('/register/school', 'SchoolRegistrationController@create')->name('school.register');
 Route::post('/register/school', 'SchoolRegistrationController@store')->name('school.register.store');
 
+Route::get('/r/{code}', 'Affiliate\ReferralRedirectController')->where('code', '[A-Za-z0-9]{4,32}')->name('affiliate.referral_redirect');
+
+Route::middleware('guest:affiliate')->group(function () {
+    Route::get('/affiliates/request', 'Affiliate\RequestAffiliateController@create')->name('affiliates.request');
+    Route::post('/affiliates/request', 'Affiliate\RequestAffiliateController@store')->name('affiliates.request.store');
+});
+
+Route::prefix('affiliate')->group(function () {
+    Route::middleware('guest:affiliate')->group(function () {
+        Route::get('/login', 'Affiliate\AuthController@showLogin')->name('affiliate.login');
+        Route::post('/login', 'Affiliate\AuthController@login')->name('affiliate.login.post');
+    });
+
+    Route::middleware('auth:affiliate')->group(function () {
+        Route::post('/logout', 'Affiliate\AuthController@logout')->name('affiliate.logout');
+        Route::get('/', 'Affiliate\DashboardController@index')->name('affiliate.dashboard');
+        Route::get('/profile', 'Affiliate\DashboardController@editProfile')->name('affiliate.profile.edit');
+        Route::put('/profile', 'Affiliate\DashboardController@updateProfile')->name('affiliate.profile.update');
+    });
+});
+
 // Platform admin auth and dashboard
 Route::group(['prefix' => 'platform'], function () {
     Route::middleware('guest:platform')->group(function () {
@@ -28,6 +49,11 @@ Route::group(['prefix' => 'platform'], function () {
     Route::middleware('auth:platform')->group(function () {
         Route::post('/logout', 'Platform\AuthController@logout')->name('platform.logout');
         Route::get('/dashboard', 'Platform\DashboardController@index')->name('platform.dashboard');
+        Route::get('/affiliates/export', 'Platform\AffiliateAdminController@exportCsv')->name('platform.affiliates.export');
+        Route::get('/affiliates', 'Platform\AffiliateAdminController@index')->name('platform.affiliates.index');
+        Route::get('/affiliates/{affiliate}', 'Platform\AffiliateAdminController@show')->name('platform.affiliates.show');
+        Route::patch('/affiliates/{affiliate}/approve', 'Platform\AffiliateAdminController@approve')->name('platform.affiliates.approve');
+        Route::patch('/affiliates/{affiliate}/suspend', 'Platform\AffiliateAdminController@suspend')->name('platform.affiliates.suspend');
         Route::get('/schools/{school}', 'Platform\DashboardController@show')->name('platform.schools.show');
         Route::patch('/schools/{school}/suspend', 'Platform\DashboardController@suspend')->name('platform.schools.suspend');
         Route::patch('/schools/{school}/activate', 'Platform\DashboardController@activate')->name('platform.schools.activate');

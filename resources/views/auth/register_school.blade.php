@@ -23,6 +23,13 @@
                 <section class="saas-auth-card-wrap">
                     <form class="saas-auth-card" method="POST" action="{{ route('school.register.store') }}">
                         @csrf
+                        @if (!empty($registration_ref))
+                            <input type="hidden" name="ref" value="{{ $registration_ref }}">
+                            <div class="alert alert-info alert-styled-left mb-3">
+                                <span class="font-weight-semibold">Affiliate referral</span>
+                                <span class="d-block small mb-0">This registration is linked to referral code <strong>{{ $registration_ref }}</strong>. If that is not correct, open the registration page without a referral link.</span>
+                            </div>
+                        @endif
 
                         <div class="text-center mb-3">
                             <i class="icon-home icon-2x"></i>

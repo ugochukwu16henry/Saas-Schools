@@ -13,6 +13,7 @@
                 <div class="mh-top-links">
                     <a href="#features">Features</a>
                     <a href="#pricing">Pricing</a>
+                    <a href="#affiliates">Affiliates</a>
                     <a href="#faq">FAQ</a>
                     <a href="mailto:support@saas-schools.com?subject=Book%20a%20Demo">Book a Demo</a>
                     <a href="{{ route('school.register') }}">Get Started</a>
@@ -158,6 +159,24 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section id="affiliates" class="container pb-5">
+            <div class="mh-card" style="max-width:920px;margin:0 auto;">
+                <span class="mh-kicker">RiseFlow Affiliate Program</span>
+                <h2 class="mh-section-title">Refer schools. Earn when they bill.</h2>
+                <p class="mb-3">Share RiseFlow with school owners using your personal referral link. When a referred school completes successful Paystack payments, you accrue commissions based on billable students (one-time and monthly components).</p>
+                <ul class="mh-list mb-4">
+                    <li>Request access, pass a quick review, and receive your referral code</li>
+                    <li>Schools register with your link so attribution stays clear</li>
+                    <li>Track referred schools and recorded earnings in your affiliate dashboard</li>
+                </ul>
+                <div class="d-flex flex-wrap" style="gap:10px;">
+                    <a href="{{ route('affiliates.request') }}" class="btn saas-btn-primary">Apply as an affiliate</a>
+                    <a href="{{ route('affiliate.login') }}" class="btn saas-btn-secondary">Affiliate sign in</a>
+                </div>
+                <p class="small text-muted mt-3 mb-0">Payouts and rates are communicated during onboarding. Platform administrators approve each application.</p>
             </div>
         </section>
 

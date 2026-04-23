@@ -16,6 +16,12 @@ class School extends Model
         'status',
         'free_student_limit',
         'paystack_customer_code',
+        'affiliate_id',
+        'affiliate_attributed_at',
+    ];
+
+    protected $casts = [
+        'affiliate_attributed_at' => 'datetime',
     ];
 
     public function users()
@@ -31,6 +37,11 @@ class School extends Model
     public function subscription()
     {
         return $this->hasOne(SchoolSubscription::class);
+    }
+
+    public function affiliate()
+    {
+        return $this->belongsTo(Affiliate::class);
     }
 
     /**

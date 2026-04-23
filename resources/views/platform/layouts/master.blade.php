@@ -33,6 +33,9 @@
                 <a href="{{ route('platform.dashboard') }}" class="nav-link">Dashboard</a>
             </li>
             <li class="nav-item">
+                <a href="{{ route('platform.affiliates.index') }}" class="nav-link">Affiliates</a>
+            </li>
+            <li class="nav-item">
                 <form method="POST" action="{{ route('platform.logout') }}">
                     @csrf
                     <button class="btn btn-sm btn-light" type="submit">Logout</button>

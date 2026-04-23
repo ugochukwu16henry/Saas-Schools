@@ -46,6 +46,11 @@ return [
             'provider' => 'platform_admins',
         ],
 
+        'affiliate' => [
+            'driver' => 'session',
+            'provider' => 'affiliates',
+        ],
+
         'api' => [
             'driver' => 'token',
             'provider' => 'users',
@@ -78,6 +83,11 @@ return [
         'platform_admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\PlatformAdmin::class,
+        ],
+
+        'affiliates' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Affiliate::class,
         ],
 
         // 'users' => [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\School;
 use App\Models\Setting;
+use App\Services\AffiliateReferralService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,9 +13,16 @@ use Illuminate\Support\Str;
 
 class SchoolRegistrationController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
-        return view('auth.register_school');
+        $ref = $request->query('ref');
+        if (is_string($ref) && trim($ref) !== '') {
+            $request->session()->put('school_registration_ref', strtoupper(trim($ref)));
+        }
+
+        $registrationRef = $request->session()->get('school_registration_ref');
+
+        return view('auth.register_school', ['registration_ref' => $registrationRef]);
     }
 
     public function store(Request $request)
@@ -27,6 +35,9 @@ class SchoolRegistrationController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
+            $referral = trim((string) ($request->input('ref') ?: $request->session()->get('school_registration_ref')));
+            $affiliateId = app(AffiliateReferralService::class)->resolveAffiliateId($referral !== '' ? $referral : null);
+
             // Create the school record
             $school = School::create([
                 'name'               => $request->school_name,
@@ -34,6 +45,8 @@ class SchoolRegistrationController extends Controller
                 'email'              => $request->email,
                 'status'             => 'trial',
                 'free_student_limit' => 50,
+                'affiliate_id'       => $affiliateId,
+                'affiliate_attributed_at' => $affiliateId ? now() : null,
             ]);
 
             // Bind school so BelongsToSchool trait assigns school_id automatically
@@ -80,6 +93,8 @@ class SchoolRegistrationController extends Controller
                 'photo'     => \App\Helpers\Qs::getDefaultUserImage(),
             ]);
         });
+
+        $request->session()->forget('school_registration_ref');
 
         return redirect()->route('login')
             ->with('status', 'School registered successfully! Login to get started. Your first 50 students are free.');

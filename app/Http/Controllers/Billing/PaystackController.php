@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Billing;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\SchoolSubscription;
+use App\Services\AffiliateCommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -109,32 +110,7 @@ class PaystackController extends Controller
             return redirect()->route('billing.prompt')->withErrors(['billing' => 'Payment was not successful.']);
         }
 
-        $schoolId         = data_get($data, 'metadata.school_id');
-        $billableStudents = (int) data_get($data, 'metadata.billable_students', 0);
-        $newlyAddedCount  = (int) data_get($data, 'metadata.newly_added_students', 0);
-
-        $school = School::find($schoolId);
-        if (!$school) {
-            return redirect()->route('login');
-        }
-
-        $existingSub = SchoolSubscription::where('school_id', $school->id)->first();
-        $alreadyPaidOneTime = (int) optional($existingSub)->billed_students;
-        $updatedPaidBaseline = max($alreadyPaidOneTime, $alreadyPaidOneTime + $newlyAddedCount, $billableStudents);
-
-        // Update or create subscription record
-        SchoolSubscription::updateOrCreate(
-            ['school_id' => $school->id],
-            [
-                'status'            => 'active',
-                'billed_students'   => $updatedPaidBaseline,
-                'next_payment_date' => now()->addMonth(),
-                'paystack_customer_code' => data_get($data, 'customer.customer_code', ''),
-            ]
-        );
-
-        // Ensure school status is active
-        $school->update(['status' => 'active']);
+        $this->applySuccessfulPaymentFromPaystack($data);
 
         return redirect()->route('dashboard')->with('status', 'Payment successful! Billing has been updated.');
     }
@@ -166,29 +142,43 @@ class PaystackController extends Controller
 
     private function handleChargeSuccess(array $data): void
     {
+        $this->applySuccessfulPaymentFromPaystack($data);
+    }
+
+    /**
+     * Single path for successful Paystack charges (browser callback + webhook).
+     */
+    private function applySuccessfulPaymentFromPaystack(array $data): void
+    {
         $schoolId = data_get($data, 'metadata.school_id');
-        if (!$schoolId) return;
+        if (! $schoolId) {
+            return;
+        }
 
         $school = School::find($schoolId);
-        if (!$school) return;
+        if (! $school) {
+            return;
+        }
 
         $billableStudents = (int) data_get($data, 'metadata.billable_students', 0);
-        $newlyAddedCount  = (int) data_get($data, 'metadata.newly_added_students', 0);
-        $existingSub      = SchoolSubscription::where('school_id', $school->id)->first();
+        $newlyAddedCount = (int) data_get($data, 'metadata.newly_added_students', 0);
+        $existingSub = SchoolSubscription::where('school_id', $school->id)->first();
         $alreadyPaidOneTime = (int) optional($existingSub)->billed_students;
         $updatedPaidBaseline = max($alreadyPaidOneTime, $alreadyPaidOneTime + $newlyAddedCount, $billableStudents);
 
         SchoolSubscription::updateOrCreate(
             ['school_id' => $school->id],
             [
-                'status'            => 'active',
-                'billed_students'   => $updatedPaidBaseline,
+                'status' => 'active',
+                'billed_students' => $updatedPaidBaseline,
                 'next_payment_date' => now()->addMonth(),
                 'paystack_customer_code' => data_get($data, 'customer.customer_code', ''),
             ]
         );
 
         $school->update(['status' => 'active']);
+
+        app(AffiliateCommissionService::class)->recordFromPaystackCharge($data);
 
         Log::info("Paystack charge.success: school {$school->id}");
     }
