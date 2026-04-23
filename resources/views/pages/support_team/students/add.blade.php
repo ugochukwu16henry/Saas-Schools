@@ -7,6 +7,13 @@
 
                 {!! Qs::getPanelOptions() !!}
             </div>
+            @if(Qs::userIsTeamSA())
+                <div class="card-body border-bottom py-2">
+                    <span class="text-muted">Many students?</span>
+                    <a href="{{ route('students.bulk.create') }}" class="btn btn-sm btn-outline-primary ml-2">Bulk import from Excel</a>
+                    <a href="{{ route('students.bulk.template') }}" class="btn btn-sm btn-light ml-1">Download template only</a>
+                </div>
+            @endif
 
             <form id="ajax-reg" method="post" enctype="multipart/form-data" class="wizard-form steps-validation" action="{{ route('students.store') }}" data-fouc>
                @csrf

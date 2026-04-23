@@ -60,6 +60,10 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
 
         /*************** Students *****************/
         Route::group(['prefix' => 'students'], function(){
+            Route::get('bulk/template', 'StudentBulkController@downloadTemplate')->name('students.bulk.template');
+            Route::get('bulk', 'StudentBulkController@create')->name('students.bulk.create');
+            Route::post('bulk', 'StudentBulkController@store')->name('students.bulk.store');
+
             Route::get('reset_pass/{st_id}', 'StudentRecordController@reset_pass')->name('st.reset_pass');
             Route::get('graduated', 'StudentRecordController@graduated')->name('students.graduated');
             Route::put('not_graduated/{id}', 'StudentRecordController@not_graduated')->name('st.not_graduated');
