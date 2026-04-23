@@ -309,9 +309,11 @@ class StudentBulkController extends Controller
 
     /**
      * Never flash "import_file" into old input (files are not re-postable; a string breaks the next request).
+     * Use input() instead of except()/all() to avoid triggering allFiles() which crashes when the
+     * uploaded file is malformed or partially received (createFromBase receives a string).
      */
     protected function bulkImportRedirect(Request $request)
     {
-        return back()->withInput($request->except(['import_file']));
+        return back()->withInput($request->input());
     }
 }
