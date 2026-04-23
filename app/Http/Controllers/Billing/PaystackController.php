@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Log;
 
 class PaystackController extends Controller
 {
+    private const MONTHLY_RATE = 100;
+    private const ONE_TIME_ADD_RATE = 500;
+
     private string $secretKey;
     private string $baseUrl;
 
@@ -27,10 +30,16 @@ class PaystackController extends Controller
     {
         $school = app('currentSchool');
         $studentCount = $school->users()->where('user_type', 'student')->count();
-        $billableCount = max(0, $studentCount - $school->free_student_limit);
-        $monthlyAmount = $billableCount * 100; // ₦100 per billable student
+        $billing = $this->buildBillingSummary($school, $studentCount);
 
-        return view('billing.prompt', compact('school', 'studentCount', 'billableCount', 'monthlyAmount'));
+        return view('billing.prompt', array_merge(
+            compact('school', 'studentCount'),
+            $billing,
+            [
+                'monthlyRate' => self::MONTHLY_RATE,
+                'oneTimeRate' => self::ONE_TIME_ADD_RATE,
+            ]
+        ));
     }
 
     /**
@@ -42,8 +51,9 @@ class PaystackController extends Controller
         $user   = auth()->user();
 
         $studentCount  = $school->users()->where('user_type', 'student')->count();
-        $billableCount = max(0, $studentCount - $school->free_student_limit);
-        $amountKobo    = $billableCount * 100 * 100; // ₦100/student in kobo
+        $billing       = $this->buildBillingSummary($school, $studentCount);
+        $amountNaira   = $billing['totalDue'];
+        $amountKobo    = $amountNaira * 100;
 
         if ($amountKobo <= 0) {
             return redirect()->route('dashboard')->with('status', 'No payment needed right now.');
@@ -56,7 +66,11 @@ class PaystackController extends Controller
                 'callback_url' => route('billing.callback'),
                 'metadata'     => [
                     'school_id'      => $school->id,
-                    'billed_students' => $billableCount,
+                    'billable_students' => $billing['billableCount'],
+                    'newly_added_students' => $billing['newlyAddedCount'],
+                    'monthly_amount' => $billing['monthlyAmount'],
+                    'one_time_amount' => $billing['oneTimeAmount'],
+                    'total_due' => $billing['totalDue'],
                     'cancel_action'  => route('billing.prompt'),
                 ],
             ]);
@@ -95,20 +109,25 @@ class PaystackController extends Controller
             return redirect()->route('billing.prompt')->withErrors(['billing' => 'Payment was not successful.']);
         }
 
-        $schoolId       = data_get($data, 'metadata.school_id');
-        $billedStudents = (int) data_get($data, 'metadata.billed_students', 0);
+        $schoolId         = data_get($data, 'metadata.school_id');
+        $billableStudents = (int) data_get($data, 'metadata.billable_students', 0);
+        $newlyAddedCount  = (int) data_get($data, 'metadata.newly_added_students', 0);
 
         $school = School::find($schoolId);
         if (!$school) {
             return redirect()->route('login');
         }
 
+        $existingSub = SchoolSubscription::where('school_id', $school->id)->first();
+        $alreadyPaidOneTime = (int) optional($existingSub)->billed_students;
+        $updatedPaidBaseline = max($alreadyPaidOneTime, $alreadyPaidOneTime + $newlyAddedCount, $billableStudents);
+
         // Update or create subscription record
         SchoolSubscription::updateOrCreate(
             ['school_id' => $school->id],
             [
                 'status'            => 'active',
-                'billed_students'   => $billedStudents,
+                'billed_students'   => $updatedPaidBaseline,
                 'next_payment_date' => now()->addMonth(),
                 'paystack_customer_code' => data_get($data, 'customer.customer_code', ''),
             ]
@@ -117,7 +136,7 @@ class PaystackController extends Controller
         // Ensure school status is active
         $school->update(['status' => 'active']);
 
-        return redirect()->route('dashboard')->with('status', 'Payment successful! Your subscription is now active.');
+        return redirect()->route('dashboard')->with('status', 'Payment successful! Billing has been updated.');
     }
 
     /**
@@ -153,13 +172,17 @@ class PaystackController extends Controller
         $school = School::find($schoolId);
         if (!$school) return;
 
-        $billedStudents = (int) data_get($data, 'metadata.billed_students', 0);
+        $billableStudents = (int) data_get($data, 'metadata.billable_students', 0);
+        $newlyAddedCount  = (int) data_get($data, 'metadata.newly_added_students', 0);
+        $existingSub      = SchoolSubscription::where('school_id', $school->id)->first();
+        $alreadyPaidOneTime = (int) optional($existingSub)->billed_students;
+        $updatedPaidBaseline = max($alreadyPaidOneTime, $alreadyPaidOneTime + $newlyAddedCount, $billableStudents);
 
         SchoolSubscription::updateOrCreate(
             ['school_id' => $school->id],
             [
                 'status'            => 'active',
-                'billed_students'   => $billedStudents,
+                'billed_students'   => $updatedPaidBaseline,
                 'next_payment_date' => now()->addMonth(),
                 'paystack_customer_code' => data_get($data, 'customer.customer_code', ''),
             ]
@@ -181,5 +204,26 @@ class PaystackController extends Controller
         }
 
         Log::info("Paystack subscription.disable: school {$schoolId}");
+    }
+
+    private function buildBillingSummary(School $school, int $studentCount): array
+    {
+        $billableCount = max(0, $studentCount - $school->free_student_limit);
+
+        $alreadyPaidOneTime = (int) optional($school->subscription)->billed_students;
+        $newlyAddedCount = max(0, $billableCount - $alreadyPaidOneTime);
+
+        $monthlyAmount = $billableCount * self::MONTHLY_RATE;
+        $oneTimeAmount = $newlyAddedCount * self::ONE_TIME_ADD_RATE;
+        $totalDue = $monthlyAmount + $oneTimeAmount;
+
+        return [
+            'billableCount' => $billableCount,
+            'alreadyPaidOneTime' => $alreadyPaidOneTime,
+            'newlyAddedCount' => $newlyAddedCount,
+            'monthlyAmount' => $monthlyAmount,
+            'oneTimeAmount' => $oneTimeAmount,
+            'totalDue' => $totalDue,
+        ];
     }
 }

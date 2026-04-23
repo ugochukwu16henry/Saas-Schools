@@ -1,45 +1,68 @@
 @extends('layouts.login_master')
 
 @section('content')
-    <div class="page-content login-cover">
+<div class="page-content auth-stage">
+    <div class="content-wrapper">
+        <div class="content d-flex justify-content-center align-items-center py-4">
+            <div class="saas-auth-shell">
 
-        <div class="content-wrapper">
-    <div class="content d-flex justify-content-center align-items-center">
+                <aside class="saas-auth-side">
+                    <div class="kicker">Account Recovery</div>
+                    <h1>Securely recover access to your dashboard.</h1>
+                    <p>Enter your account email and we will send a recovery link so you can set a new password quickly.</p>
 
-        <!-- Password recovery form -->
-        <form class="login-form" method="POST" action="{{ route('password.email') }}">
-            @csrf
-            <div class="card mb-0">
-                <div class="card-body">
+                    <ul class="value-list">
+                        <li>Fast reset link delivery</li>
+                        <li>Protected and time-limited token</li>
+                        <li>Works across all school accounts</li>
+                    </ul>
 
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
+                    <div class="trust-chip">Need help? Contact support@riseflow.com</div>
+                </aside>
+
+                <section class="saas-auth-card-wrap">
+                    <form class="saas-auth-card" method="POST" action="{{ route('password.email') }}">
+                        @csrf
+
+                        <div class="text-center mb-3">
+                            <i class="icon-key icon-2x"></i>
+                            <h2>Password recovery</h2>
+                            <p class="muted">We will send password reset instructions to your email.</p>
                         </div>
-                    @endif
+
+                        @if (session('status'))
+                            <div class="alert alert-success alert-styled-left alert-dismissible" role="alert">
+                                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                                {{ session('status') }}
+                            </div>
+                        @endif
+
                         @if ($errors->has('email'))
-                            <div class="alert alert-danger" role="alert">
+                            <div class="alert alert-danger alert-styled-left alert-dismissible" role="alert">
+                                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                                 {{ $errors->first('email') }}
                             </div>
                         @endif
 
-                    <div class="text-center mb-3">
-                        <i class="icon-spinner11 icon-2x text-warning border-warning border-3 rounded-round p-3 mb-3 mt-1"></i>
-                        <h5 class="mb-0">Password recovery</h5>
-                        <span class="d-block text-muted">We'll send you instructions in email</span>
-                    </div>
+                        <div class="form-group">
+                            <label class="font-weight-semibold">Your email</label>
+                            <input name="email" required type="email" class="form-control" value="{{ old('email') }}" placeholder="name@school.com">
+                        </div>
 
-                    <div class="form-group ">
-                        <input name="email" required type="email" class="form-control" value="{{ old('email') }}" placeholder="Your email">
-                    </div>
+                        <div class="form-group mb-2">
+                            <button type="submit" class="btn btn-block saas-btn-primary">
+                                Send recovery link <i class="icon-circle-right2 ml-2"></i>
+                            </button>
+                        </div>
 
-                    <button type="submit" class="btn bg-blue btn-block"><i class="icon-spinner11 mr-2"></i> Reset password</button>
-                </div>
+                        <div class="auth-links text-center mt-2">
+                            <a href="{{ route('login') }}">Back to sign in</a>
+                        </div>
+                    </form>
+                </section>
+
             </div>
-        </form>
-        <!-- /password recovery form -->
-
+        </div>
     </div>
-    </div>
-    </div>
+</div>
 @endsection

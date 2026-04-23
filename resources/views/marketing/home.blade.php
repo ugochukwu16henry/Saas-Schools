@@ -36,7 +36,7 @@
                     <a href="{{ route('login') }}" class="btn saas-btn-secondary btn-lg">Sign in</a>
                 </div>
 
-                <div class="mh-trust-note">First 50 students free. Paystack-ready billing in Naira. Built for growth-focused schools.</div>
+                <div class="mh-trust-note">First 50 students are free for life. Above 50, pay a one-time ₦500 per newly added student and ₦100 per student monthly.</div>
             </div>
         </section>
 
@@ -62,7 +62,7 @@
                 <div class="col-md-4 mb-3">
                     <article class="mh-card">
                         <h3>Finance and Billing</h3>
-                        <p>Track fees and receipts with transparent pricing above free student limits.</p>
+                        <p>Enjoy lifetime free access for your first 50 students, then transparent one-time and monthly billing as your school grows.</p>
                     </article>
                 </div>
                 <div class="col-md-4 mb-3">
@@ -131,7 +131,7 @@
             <div class="mh-pricing">
                 <div class="mh-pricing-head">
                     <h2>Simple and predictable pricing</h2>
-                    <p>Start free and pay only as your enrolled student count grows.</p>
+                    <p>First 50 students are free for life. Billing starts only for students above 50.</p>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -139,7 +139,7 @@
                             <h3>Starter</h3>
                             <p class="mh-price">Free</p>
                             <ul class="mh-list">
-                                <li>Up to 50 students</li>
+                                <li>First 50 students free for life</li>
                                 <li>Core academic and admin workflows</li>
                                 <li>Secure tenant space</li>
                             </ul>
@@ -148,8 +148,9 @@
                     <div class="col-md-6 mb-3">
                         <div class="mh-price-card mh-price-card-featured">
                             <h3>Growth</h3>
-                            <p class="mh-price">N100 <span>/student/month above 50</span></p>
+                            <p class="mh-price">₦100 <span>/student/month above 50</span></p>
                             <ul class="mh-list">
+                                <li>₦500 one-time per newly added student above 50</li>
                                 <li>Scale without migration</li>
                                 <li>Paystack billing support</li>
                                 <li>Platform-level monitoring</li>
@@ -171,7 +172,7 @@
 
                 <div class="faq-item">
                     <h3>How does billing work?</h3>
-                    <p>Your first 50 students are free. Billing applies only to students above that threshold.</p>
+                    <p>Your first 50 students are free for life. For each newly added student above 50, there is a one-time ₦500 charge, plus ₦100 monthly per student above 50.</p>
                 </div>
 
                 <div class="faq-item">

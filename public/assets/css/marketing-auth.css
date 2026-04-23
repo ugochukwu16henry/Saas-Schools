@@ -336,6 +336,20 @@ h4,
     text-decoration: none;
 }
 
+/* Keep topbar Sign in button readable despite generic link color rules */
+.mh-top-links a.saas-btn-primary,
+.mh-top-links a.saas-btn-primary:hover,
+.mh-top-links a.saas-btn-primary:focus {
+    color: #fff !important;
+    text-decoration: none;
+}
+
+body.dark-mode .mh-top-links a.saas-btn-primary,
+body.dark-mode .mh-top-links a.saas-btn-primary:hover,
+body.dark-mode .mh-top-links a.saas-btn-primary:focus {
+    color: #fff !important;
+}
+
 #features,
 #pricing,
 #faq {

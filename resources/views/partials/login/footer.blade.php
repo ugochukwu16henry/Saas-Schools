@@ -7,9 +7,9 @@
     </div>
 
     <div class="navbar-collapse collapse" id="navbar-footer">
-					<span class="navbar-text">
-							&copy; {{ date('Y') }}. <a href="#">{{ Qs::getSystemName() }}</a> by <a href="#" >RiseFlow</a>
-					</span>
+                    <span class="navbar-text">
+                            &copy; {{ date('Y') }}. RiseFlow
+                    </span>
 
         <ul class="navbar-nav ml-lg-auto">
             <li class="nav-item"><a href="{{ route('privacy_policy') }}" class="navbar-nav-link" target="_blank"><i class="icon-lifebuoy mr-2"></i> Privacy Policy</a></li>
