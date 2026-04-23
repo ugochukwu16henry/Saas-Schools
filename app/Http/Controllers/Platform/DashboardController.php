@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Models\Affiliate;
 use App\Models\School;
 use App\Models\SchoolSubscription;
 use Illuminate\Http\Request;
@@ -71,9 +72,17 @@ class DashboardController extends Controller
             'suspended_schools' => School::where('status', 'suspended')->count(),
             'students' => DB::table('users')->where('user_type', 'student')->count(),
             'teachers' => DB::table('users')->where('user_type', 'teacher')->count(),
+            'total_affiliates' => Affiliate::count(),
+            'pending_affiliates' => Affiliate::where('status', 'pending')->count(),
+            'approved_affiliates' => Affiliate::where('status', 'approved')->count(),
         ];
 
-        return view('platform.dashboard.index', compact('schools', 'stats'));
+        $pendingAffiliates = Affiliate::where('status', 'pending')
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return view('platform.dashboard.index', compact('schools', 'stats', 'pendingAffiliates'));
     }
 
     public function show(School $school)

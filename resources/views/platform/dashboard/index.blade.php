@@ -60,6 +60,83 @@
     </div>
 </div>
 
+{{-- Affiliate summary --}}
+<div class="row mb-3">
+    <div class="col-sm-4">
+        <div class="card card-body bg-slate text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="font-weight-semibold mb-0">{{ number_format($stats['total_affiliates']) }}</h3>
+                    <div>Total Affiliates</div>
+                </div>
+                <i class="icon-users2 font-size-24 opacity-75"></i>
+            </div>
+            <a href="{{ route('platform.affiliates.index') }}" class="text-white small mt-1 d-block">View all &rarr;</a>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card card-body bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="font-weight-semibold mb-0">{{ number_format($stats['approved_affiliates']) }}</h3>
+                    <div>Approved Affiliates</div>
+                </div>
+                <i class="icon-checkmark3 font-size-24 opacity-75"></i>
+            </div>
+            <a href="{{ route('platform.affiliates.index', ['status' => 'approved']) }}" class="text-white small mt-1 d-block">View approved &rarr;</a>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card card-body {{ $stats['pending_affiliates'] > 0 ? 'bg-warning' : 'bg-secondary' }} text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="font-weight-semibold mb-0">{{ number_format($stats['pending_affiliates']) }}</h3>
+                    <div>Pending Approval</div>
+                </div>
+                <i class="icon-hour-glass2 font-size-24 opacity-75"></i>
+            </div>
+            <a href="{{ route('platform.affiliates.index', ['status' => 'pending']) }}" class="text-white small mt-1 d-block">Review pending &rarr;</a>
+        </div>
+    </div>
+</div>
+
+@if ($pendingAffiliates->isNotEmpty())
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Pending Affiliate Applications</h5>
+        <a href="{{ route('platform.affiliates.index', ['status' => 'pending']) }}" class="btn btn-sm btn-warning">View all</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Applied</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($pendingAffiliates as $pa)
+                    <tr>
+                        <td>{{ $pa->name }}</td>
+                        <td>{{ $pa->email }}</td>
+                        <td>{{ $pa->phone }}</td>
+                        <td>{{ $pa->created_at->diffForHumans() }}</td>
+                        <td>
+                            <a href="{{ route('platform.affiliates.show', $pa) }}" class="btn btn-sm btn-primary">Review</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="card">
     <div class="card-header header-elements-inline">
         <h5 class="card-title">Registered Schools</h5>

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Affiliate;
 use App\Http\Controllers\Controller;
 use App\Models\AffiliateCommissionLedger;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class DashboardController extends Controller
 {
@@ -72,19 +74,30 @@ class DashboardController extends Controller
     {
         $affiliate = Auth::guard('affiliate')->user();
 
-        $validated = $request->validate([
-            'bank_name' => 'nullable|string|max:120',
+        // Validate text fields via input() to avoid touching the files bag,
+        // which crashes when a stray string arrives where a SymfonyUploadedFile is expected.
+        $textValidator = Validator::make($request->input(), [
+            'bank_name'      => 'nullable|string|max:120',
             'account_number' => 'nullable|string|max:32',
-            'account_name' => 'nullable|string|max:120',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'password' => 'nullable|string|min:8|confirmed',
+            'account_name'   => 'nullable|string|max:120',
+            'password'       => 'nullable|string|min:8|confirmed',
         ]);
+        $textValidator->validate();
+        $validated = $textValidator->validated();
 
-        if ($request->hasFile('photo')) {
+        // Resolve photo safely from the files bag only.
+        $photoFile = $request->files->get('photo');
+        if ($photoFile instanceof UploadedFile && $photoFile->isValid()) {
+            $fileValidator = Validator::make(
+                ['photo' => $photoFile],
+                ['photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048']
+            );
+            $fileValidator->validate();
+
             if ($affiliate->photo_path) {
                 Storage::disk('public')->delete($affiliate->photo_path);
             }
-            $validated['photo_path'] = $request->file('photo')->store('affiliate-profiles/'.$affiliate->id, 'public');
+            $validated['photo_path'] = $photoFile->store('affiliate-profiles/'.$affiliate->id, 'public');
         }
 
         if (! empty($validated['password'])) {
@@ -92,10 +105,10 @@ class DashboardController extends Controller
         }
 
         $affiliate->fill([
-            'bank_name' => $validated['bank_name'] ?? $affiliate->bank_name,
+            'bank_name'      => $validated['bank_name'] ?? $affiliate->bank_name,
             'account_number' => $validated['account_number'] ?? $affiliate->account_number,
-            'account_name' => $validated['account_name'] ?? $affiliate->account_name,
-            'photo_path' => $validated['photo_path'] ?? $affiliate->photo_path,
+            'account_name'   => $validated['account_name'] ?? $affiliate->account_name,
+            'photo_path'     => $validated['photo_path'] ?? $affiliate->photo_path,
         ]);
         $affiliate->save();
 
