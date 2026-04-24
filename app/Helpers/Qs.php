@@ -11,6 +11,16 @@ use Throwable;
 
 class Qs
 {
+    private static function hashidsInstance(): ?Hashids
+    {
+        try {
+            $date = date('dMY') . 'CJ';
+            return new Hashids($date, 14);
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
     public static function displayError($errors)
     {
         foreach ($errors as $err) {
@@ -81,8 +91,11 @@ class Qs
 
     public static function hash($id)
     {
-        $date = date('dMY') . 'CJ';
-        $hash = new Hashids($date, 14);
+        $hash = self::hashidsInstance();
+        if (!$hash) {
+            return (string) $id;
+        }
+
         return $hash->encode($id);
     }
 
@@ -109,8 +122,15 @@ class Qs
 
     public static function decodeHash($str, $toString = true)
     {
-        $date = date('dMY') . 'CJ';
-        $hash = new Hashids($date, 14);
+        if (is_numeric($str)) {
+            return $toString ? (string) $str : [(int) $str];
+        }
+
+        $hash = self::hashidsInstance();
+        if (!$hash) {
+            return $toString ? '' : [];
+        }
+
         $decoded = $hash->decode($str);
         return $toString ? implode(',', $decoded) : $decoded;
     }
