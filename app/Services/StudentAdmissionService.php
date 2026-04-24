@@ -61,6 +61,7 @@ class StudentAdmissionService
         $user = $this->userRepo->create($data);
 
         $sr['adm_no'] = $data['username'];
+        $this->ensureAdmissionNumberFitsColumn($sr['adm_no']);
         $sr['user_id'] = $user->id;
         $sr['session'] = Qs::getSetting('current_session');
 
@@ -126,5 +127,14 @@ class StudentAdmissionService
         }
 
         return $username;
+    }
+
+    private function ensureAdmissionNumberFitsColumn(string $admissionNumber): void
+    {
+        $maxLength = 30;
+
+        if (mb_strlen($admissionNumber) > $maxLength) {
+            throw new \RuntimeException('Generated admission number "' . $admissionNumber . '" exceeds the current student_records.adm_no limit of ' . $maxLength . ' characters.');
+        }
     }
 }
