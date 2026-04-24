@@ -51,7 +51,7 @@
         </div>
         @endif
 
-        <form method="post" action="{{ route('students.bulk.store') }}" enctype="multipart/form-data" class="mt-3">
+        <form id="bulk-import-form" method="post" action="{{ route('students.bulk.store') }}" enctype="multipart/form-data" class="mt-3">
             @csrf
             <div class="form-group">
                 <label>Excel file (.xlsx or .xls) <span class="text-danger">*</span></label>
@@ -106,8 +106,7 @@
 <script>
     $(function() {
         // Prevent submitting without a file — belt-and-suspenders alongside the HTML `required` attribute.
-        $('form[action="{{ route('
-            students.bulk.store ') }}"]').on('submit', function(e) {
+        $('#bulk-import-form').on('submit', function(e) {
             var fileInput = $(this).find('input[type="file"][name="import_file"]');
             if (fileInput.length && (!fileInput[0].files || fileInput[0].files.length === 0)) {
                 e.preventDefault();
