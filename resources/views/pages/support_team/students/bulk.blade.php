@@ -105,6 +105,17 @@
 @section('scripts')
 <script>
     $(function() {
+        // Prevent submitting without a file — belt-and-suspenders alongside the HTML `required` attribute.
+        $('form[action="{{ route('
+            students.bulk.store ') }}"]').on('submit', function(e) {
+            var fileInput = $(this).find('input[type="file"][name="import_file"]');
+            if (fileInput.length && (!fileInput[0].files || fileInput[0].files.length === 0)) {
+                e.preventDefault();
+                alert('Please select an Excel file (.xlsx or .xls) before submitting.');
+                fileInput.focus();
+                return false;
+            }
+        });
         var oldState = "{{ (string) old('state_id') }}";
         var oldLga = "{{ (string) old('lga_id') }}";
         if (oldState) {

@@ -37,6 +37,19 @@ class StudentBulkController extends Controller
 
     public function store(Request $request, StudentBulkExcelService $excelService, StudentAdmissionService $admissionService)
     {
+        // Diagnostic log — helps trace upload failures in production.
+        Log::info('BulkImport store() received', [
+            'raw_files_keys'   => array_keys($_FILES),
+            'files_bag_keys'   => array_keys($request->files->all()),
+            'files_has'        => $request->files->has('import_file'),
+            'raw_file_error'   => isset($_FILES['import_file']['error']) ? $_FILES['import_file']['error'] : 'missing',
+            'content_type'     => $request->header('Content-Type', 'not-set'),
+            'content_length'   => $request->header('Content-Length', 'not-set'),
+            'server_cl'        => $request->server('CONTENT_LENGTH', 'not-set'),
+            'upload_max'       => ini_get('upload_max_filesize'),
+            'post_max'         => ini_get('post_max_size'),
+        ]);
+
         // If request body exceeded post_max_size, PHP drops uploaded files and $_POST.
         $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
         $postMaxBytes = $this->iniSizeToBytes((string) ini_get('post_max_size'));
@@ -47,8 +60,37 @@ class StudentBulkController extends Controller
 
         $file = $this->resolveImportFile($request);
         if ($file === null) {
-            return $this->bulkImportRedirect($request)
-                ->withErrors(['import_file' => 'Please upload an Excel file (.xlsx or .xls). Do not use a saved session without choosing the file again.']);
+            // Build a detailed reason for the log and a user-facing hint.
+            $rawError = isset($_FILES['import_file']['error']) ? (int) $_FILES['import_file']['error'] : -1;
+            $phpErrMap = [
+                0  => 'UPLOAD_ERR_OK (no error — but file still missing from FileBag)',
+                1  => 'UPLOAD_ERR_INI_SIZE — file exceeds upload_max_filesize (' . ini_get('upload_max_filesize') . ')',
+                2  => 'UPLOAD_ERR_FORM_SIZE — file exceeds MAX_FILE_SIZE in form',
+                3  => 'UPLOAD_ERR_PARTIAL — file was only partially uploaded',
+                4  => 'UPLOAD_ERR_NO_FILE — no file was selected',
+                6  => 'UPLOAD_ERR_NO_TMP_DIR — server temp directory missing',
+                7  => 'UPLOAD_ERR_CANT_WRITE — failed to write to disk',
+                8  => 'UPLOAD_ERR_EXTENSION — upload stopped by PHP extension',
+                -1 => 'key not in $_FILES at all (post_max_size exceeded, or form not multipart)',
+            ];
+            $reason = $phpErrMap[$rawError] ?? "Unknown PHP upload error code {$rawError}";
+            Log::warning('BulkImport: resolveImportFile returned null', [
+                'raw_files_has_key' => array_key_exists('import_file', $_FILES),
+                'raw_error_code'    => $rawError,
+                'reason'            => $reason,
+            ]);
+
+            $hint = match (true) {
+                $rawError === 4  => 'No file was selected. Please choose an Excel file (.xlsx or .xls) before submitting.',
+                $rawError === 1  => 'The file is too large (server limit: ' . ini_get('upload_max_filesize') . '). Split the spreadsheet into smaller batches.',
+                $rawError === 3  => 'The file was only partially uploaded. Check your connection and try again.',
+                $rawError === 6  => 'Server configuration error: temp directory missing. Contact support.',
+                $rawError === 7  => 'Server configuration error: cannot write to temp directory. Contact support.',
+                $rawError === -1 => 'The file did not reach the server (possible size limit: post_max_size=' . ini_get('post_max_size') . '). Try a smaller file or contact support.',
+                default          => 'Please upload an Excel file (.xlsx or .xls). If you were redirected here after an error, you must re-select the file.',
+            };
+
+            return $this->bulkImportRedirect($request)->withErrors(['import_file' => $hint]);
         }
         if (! $file->isValid()) {
             return $this->bulkImportRedirect($request)
