@@ -74,15 +74,15 @@ class StudentAdmissionService
      *
      * @return string
      */
+
     private function generateUniqueCode(): string
     {
         do {
             $code = strtoupper(Str::random(10));
-        } while (User::where('code', $code)->exists());
+        } while (User::withoutGlobalScopes()->where('code', $code)->exists());
 
         return $code;
     }
-
     /**
      * Generate a unique username for a student.
      *
@@ -98,13 +98,13 @@ class StudentAdmissionService
 
         if ($admNo) {
             $username = $base . $admNo;
-            // Check if this username already exists
-            if (!User::where('username', $username)->exists()) {
+            // Check if this username already exists (globally, across all schools)
+            if (!User::withoutGlobalScopes()->where('username', $username)->exists()) {
                 return $username;
             }
             // If it exists, append a counter
             $counter = 1;
-            while (User::where('username', $base . $admNo . '-' . $counter)->exists()) {
+            while (User::withoutGlobalScopes()->where('username', $base . $admNo . '-' . $counter)->exists()) {
                 $counter++;
             }
             return $base . $admNo . '-' . $counter;
@@ -114,14 +114,14 @@ class StudentAdmissionService
         $maxAttempts = 100;
         for ($i = 0; $i < $maxAttempts; $i++) {
             $username = $base . mt_rand(1000, 99999);
-            if (!User::where('username', $username)->exists()) {
+            if (!User::withoutGlobalScopes()->where('username', $username)->exists()) {
                 return $username;
             }
         }
 
         // Fallback: use a timestamp-based approach if random attempts fail
         $username = $base . 'U' . time();
-        while (User::where('username', $username)->exists()) {
+        while (User::withoutGlobalScopes()->where('username', $username)->exists()) {
             $username .= '_' . mt_rand(10, 99);
         }
 
