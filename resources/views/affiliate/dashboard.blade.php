@@ -20,7 +20,7 @@
                 </div>
 
                 @if (session('status'))
-                    <div class="alert alert-success">{{ session('status') }}</div>
+                <div class="alert alert-success">{{ session('status') }}</div>
                 @endif
 
                 <div class="card mb-3">
@@ -35,7 +35,11 @@
                                 <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('referral-url').value)">Copy</button>
                             </div>
                         </div>
+                        @if(!empty($affiliate->code))
                         <p class="small text-muted mt-2 mb-0">Short link: <a href="{{ route('affiliate.referral_redirect', ['code' => $affiliate->code]) }}">{{ url('/r/'.$affiliate->code) }}</a> (redirects to school registration with your code).</p>
+                        @else
+                        <p class="small text-muted mt-2 mb-0">Short link will appear after your referral code is generated.</p>
+                        @endif
                     </div>
                 </div>
 
@@ -77,16 +81,16 @@
                                 </thead>
                                 <tbody>
                                     @forelse ($schools as $school)
-                                        <tr>
-                                            <td>{{ $school->name }}</td>
-                                            <td class="text-center">{{ $school->status }}</td>
-                                            <td class="text-center">{{ number_format($school->students_count) }}</td>
-                                            <td class="text-center">{{ number_format($school->billable_count) }}</td>
-                                        </tr>
+                                    <tr>
+                                        <td>{{ $school->name }}</td>
+                                        <td class="text-center">{{ $school->status }}</td>
+                                        <td class="text-center">{{ number_format($school->students_count) }}</td>
+                                        <td class="text-center">{{ number_format($school->billable_count) }}</td>
+                                    </tr>
                                     @empty
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted p-4">No referred schools yet. Share your link with school owners.</td>
-                                        </tr>
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted p-4">No referred schools yet. Share your link with school owners.</td>
+                                    </tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -112,17 +116,17 @@
                                 </thead>
                                 <tbody>
                                     @forelse ($recentLedger as $row)
-                                        <tr>
-                                            <td>{{ $row->created_at->format('M j, H:i') }}</td>
-                                            <td>{{ $row->school->name ?? '—' }}</td>
-                                            <td class="text-right">{{ number_format($row->one_time_commission_ngn) }}</td>
-                                            <td class="text-right">{{ number_format($row->monthly_commission_ngn) }}</td>
-                                            <td class="text-right font-weight-semibold">{{ number_format($row->total_commission_ngn) }}</td>
-                                        </tr>
+                                    <tr>
+                                        <td>{{ $row->created_at->format('M j, H:i') }}</td>
+                                        <td>{{ $row->school->name ?? '—' }}</td>
+                                        <td class="text-right">{{ number_format($row->one_time_commission_ngn) }}</td>
+                                        <td class="text-right">{{ number_format($row->monthly_commission_ngn) }}</td>
+                                        <td class="text-right font-weight-semibold">{{ number_format($row->total_commission_ngn) }}</td>
+                                    </tr>
                                     @empty
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted p-4">No commission rows yet. They appear after referred schools complete Paystack payments.</td>
-                                        </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted p-4">No commission rows yet. They appear after referred schools complete Paystack payments.</td>
+                                    </tr>
                                     @endforelse
                                 </tbody>
                             </table>

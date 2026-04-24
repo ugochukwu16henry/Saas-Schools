@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Affiliate;
 
 use App\Http\Controllers\Controller;
+use App\Models\Affiliate;
 use App\Models\AffiliateCommissionLedger;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -19,7 +21,13 @@ class DashboardController extends Controller
 
     public function index()
     {
+        /** @var Affiliate $affiliate */
         $affiliate = Auth::guard('affiliate')->user();
+
+        if (empty($affiliate->code)) {
+            $affiliate->code = $this->generateReferralCode();
+            $affiliate->save();
+        }
 
         $schools = $affiliate->schools()
             ->withCount(['users as students_count' => function ($q) {
@@ -65,6 +73,15 @@ class DashboardController extends Controller
         ));
     }
 
+    private function generateReferralCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+        } while (\App\Models\Affiliate::where('code', $code)->exists());
+
+        return $code;
+    }
+
     public function editProfile()
     {
         return view('affiliate.profile', ['affiliate' => Auth::guard('affiliate')->user()]);
@@ -72,6 +89,7 @@ class DashboardController extends Controller
 
     public function updateProfile(Request $request)
     {
+        /** @var Affiliate $affiliate */
         $affiliate = Auth::guard('affiliate')->user();
 
         // Validate text fields via input() to avoid touching the files bag,
@@ -97,7 +115,7 @@ class DashboardController extends Controller
             if ($affiliate->photo_path) {
                 Storage::disk('public')->delete($affiliate->photo_path);
             }
-            $validated['photo_path'] = $photoFile->store('affiliate-profiles/'.$affiliate->id, 'public');
+            $validated['photo_path'] = $photoFile->store('affiliate-profiles/' . $affiliate->id, 'public');
         }
 
         if (! empty($validated['password'])) {
