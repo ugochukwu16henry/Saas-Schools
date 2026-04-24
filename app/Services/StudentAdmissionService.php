@@ -13,6 +13,10 @@ use Illuminate\Support\Str;
 
 class StudentAdmissionService
 {
+    private const USERNAME_MAX_LENGTH = 100;
+
+    private const ADMISSION_NUMBER_MAX_LENGTH = 100;
+
     /** @var UserRepo */
     protected $userRepo;
 
@@ -58,10 +62,11 @@ class StudentAdmissionService
             $data['photo'] = asset('storage/' . $f['path']);
         }
 
+        $this->ensureGeneratedIdentifiersFit($data['username']);
+
         $user = $this->userRepo->create($data);
 
         $sr['adm_no'] = $data['username'];
-        $this->ensureAdmissionNumberFitsColumn($sr['adm_no']);
         $sr['user_id'] = $user->id;
         $sr['session'] = Qs::getSetting('current_session');
 
@@ -129,12 +134,14 @@ class StudentAdmissionService
         return $username;
     }
 
-    private function ensureAdmissionNumberFitsColumn(string $admissionNumber): void
+    private function ensureGeneratedIdentifiersFit(string $username): void
     {
-        $maxLength = 30;
+        if (mb_strlen($username) > self::USERNAME_MAX_LENGTH) {
+            throw new \RuntimeException('Generated student username "' . $username . '" exceeds the current users.username limit of ' . self::USERNAME_MAX_LENGTH . ' characters. Shorten admission number input or reduce system title length.');
+        }
 
-        if (mb_strlen($admissionNumber) > $maxLength) {
-            throw new \RuntimeException('Generated admission number "' . $admissionNumber . '" exceeds the current student_records.adm_no limit of ' . $maxLength . ' characters.');
+        if (mb_strlen($username) > self::ADMISSION_NUMBER_MAX_LENGTH) {
+            throw new \RuntimeException('Generated admission number "' . $username . '" exceeds the current student_records.adm_no limit of ' . self::ADMISSION_NUMBER_MAX_LENGTH . ' characters.');
         }
     }
 }

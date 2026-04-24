@@ -34,7 +34,7 @@ class DebugStudentCreation extends Command
 
         $this->info("Using class: {$class->name} (ID: {$class->id})");
 
-        $section = $class->sections()->first();
+        $section = $class->section()->first();
         if (!$section) {
             $this->error("Class {$class->name} has no sections.");
             return 1;

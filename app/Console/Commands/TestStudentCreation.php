@@ -33,7 +33,7 @@ class TestStudentCreation extends Command
         $this->info("Using class: {$class->name} (ID: {$class->id})");
         $this->newLine();
 
-        $section = $class->sections()->first();
+        $section = $class->section()->first();
         if (!$section) {
             $this->error("Class {$class->name} has no sections. Cannot create students.");
             return 1;
