@@ -37,6 +37,14 @@ class StudentBulkController extends Controller
 
     public function store(Request $request, StudentBulkExcelService $excelService, StudentAdmissionService $admissionService)
     {
+        // If request body exceeded post_max_size, PHP drops uploaded files and $_POST.
+        $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
+        $postMaxBytes = $this->iniSizeToBytes((string) ini_get('post_max_size'));
+        if ($postMaxBytes > 0 && $contentLength > $postMaxBytes) {
+            return $this->bulkImportRedirect($request)
+                ->withErrors(['import_file' => 'Upload failed before processing: request size exceeds server post_max_size (' . ini_get('post_max_size') . '). Ask your host/admin to increase post_max_size and upload_max_filesize.']);
+        }
+
         $file = $this->resolveImportFile($request);
         if ($file === null) {
             return $this->bulkImportRedirect($request)
@@ -315,5 +323,32 @@ class StudentBulkController extends Controller
     protected function bulkImportRedirect(Request $request)
     {
         return back()->withInput($request->input());
+    }
+
+    /**
+     * Convert php.ini size shorthand (e.g. 2M, 1G) to bytes.
+     */
+    protected function iniSizeToBytes(string $size): int
+    {
+        $size = trim($size);
+        if ($size === '') {
+            return 0;
+        }
+
+        $unit = strtolower(substr($size, -1));
+        $value = (float) $size;
+
+        switch ($unit) {
+            case 'g':
+                $value *= 1024;
+                // no break
+            case 'm':
+                $value *= 1024;
+                // no break
+            case 'k':
+                $value *= 1024;
+        }
+
+        return (int) $value;
     }
 }
