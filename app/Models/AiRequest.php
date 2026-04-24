@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use App\User;
 use Illuminate\Database\Eloquent\Model;
 
 class AiRequest extends Model
 {
+    use BelongsToSchool;
+
     protected $fillable = [
         'school_id',
         'user_id',

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use Eloquent;
 
 class TimeTableRecord extends Eloquent
 {
-    protected $fillable = ['name', 'my_class_id', 'exam_id', 'year'];
+    use BelongsToSchool;
+
+    protected $fillable = ['name', 'my_class_id', 'exam_id', 'year', 'school_id'];
 
     public function my_class()
     {
