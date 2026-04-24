@@ -45,17 +45,17 @@ class StudentAdmissionService
 
         $data['user_type'] = 'student';
         $data['name'] = ucwords($data['name']);
-        $data['code'] = strtoupper(Str::random(10));
+        $data['code'] = $this->generateUniqueCode();
         $data['password'] = Hash::make('student');
         $data['photo'] = Qs::getDefaultUserImage();
 
-        $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($admNo ?: mt_rand(1000, 99999)));
+        $data['username'] = $this->generateUniqueUsername($ct, $sr['year_admitted'], $admNo);
 
         if ($photo && $photo->isValid()) {
             $f = Qs::getFileMetaData($photo);
-            $f['name'] = 'photo.'.$f['ext'];
-            $f['path'] = $photo->storeAs(Qs::getUploadPath('student').$data['code'], $f['name']);
-            $data['photo'] = asset('storage/'.$f['path']);
+            $f['name'] = 'photo.' . $f['ext'];
+            $f['path'] = $photo->storeAs(Qs::getUploadPath('student') . $data['code'], $f['name']);
+            $data['photo'] = asset('storage/' . $f['path']);
         }
 
         $user = $this->userRepo->create($data);
@@ -67,5 +67,64 @@ class StudentAdmissionService
         $this->studentRepo->createRecord($sr);
 
         return $user;
+    }
+
+    /**
+     * Generate a unique code for a student.
+     *
+     * @return string
+     */
+    private function generateUniqueCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(10));
+        } while (User::where('code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * Generate a unique username for a student.
+     *
+     * @param  string  $classTypeCode
+     * @param  string  $yearAdmitted
+     * @param  string|null  $admNo
+     * @return string
+     */
+    private function generateUniqueUsername(string $classTypeCode, string $yearAdmitted, ?string $admNo): string
+    {
+        $appCode = Qs::getAppCode();
+        $base = strtoupper($appCode . '/' . $classTypeCode . '/' . $yearAdmitted . '/');
+
+        if ($admNo) {
+            $username = $base . $admNo;
+            // Check if this username already exists
+            if (!User::where('username', $username)->exists()) {
+                return $username;
+            }
+            // If it exists, append a counter
+            $counter = 1;
+            while (User::where('username', $base . $admNo . '-' . $counter)->exists()) {
+                $counter++;
+            }
+            return $base . $admNo . '-' . $counter;
+        }
+
+        // No admission number provided, generate a unique one
+        $maxAttempts = 100;
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $username = $base . mt_rand(1000, 99999);
+            if (!User::where('username', $username)->exists()) {
+                return $username;
+            }
+        }
+
+        // Fallback: use a timestamp-based approach if random attempts fail
+        $username = $base . 'U' . time();
+        while (User::where('username', $username)->exists()) {
+            $username .= '_' . mt_rand(10, 99);
+        }
+
+        return $username;
     }
 }

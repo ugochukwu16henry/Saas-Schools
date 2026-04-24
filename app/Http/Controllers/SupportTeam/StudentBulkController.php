@@ -5,7 +5,7 @@ namespace App\Http\Controllers\SupportTeam;
 use App\Http\Controllers\Controller;
 use App\Models\MyClass;
 use App\Models\Section;
-use App\Models\User;
+use App\User;
 use App\Repositories\LocationRepo;
 use App\Services\StudentAdmissionService;
 use App\Services\StudentBulkExcelService;
@@ -44,7 +44,7 @@ class StudentBulkController extends Controller
         }
         if (! $file->isValid()) {
             return $this->bulkImportRedirect($request)
-                ->withErrors(['import_file' => 'The file upload failed ('.$file->getErrorMessage().'). Check size (max 10 MB) and PHP upload_max_filesize / post_max_size.']);
+                ->withErrors(['import_file' => 'The file upload failed (' . $file->getErrorMessage() . '). Check size (max 10 MB) and PHP upload_max_filesize / post_max_size.']);
         }
 
         $ext = strtolower($file->getClientOriginalExtension());
@@ -84,7 +84,7 @@ class StudentBulkController extends Controller
             $sub = $school->subscription;
             if (! $sub || ! $sub->isActive()) {
                 return $this->bulkImportRedirect($request)
-                    ->with('flash_danger', 'Importing '.$n.' student(s) would exceed your free student limit ('.$school->free_student_limit.') without an active subscription. Please subscribe or reduce the number of rows. You can manage billing from your dashboard.')
+                    ->with('flash_danger', 'Importing ' . $n . ' student(s) would exceed your free student limit (' . $school->free_student_limit . ') without an active subscription. Please subscribe or reduce the number of rows. You can manage billing from your dashboard.')
                     ->with('billing_required', true);
             }
         }
@@ -123,7 +123,7 @@ class StudentBulkController extends Controller
             ]);
 
             return $this->bulkImportRedirect($request)
-                ->with('flash_danger', 'Import failed: '.$e->getMessage());
+                ->with('flash_danger', 'Import failed: ' . $e->getMessage());
         }
 
         Log::info('student_bulk_import_ok', [
@@ -135,7 +135,7 @@ class StudentBulkController extends Controller
 
         return redirect()
             ->route('students.bulk.create')
-            ->with('flash_success', 'Successfully imported '.$n.' student(s). Default password is "student". Students can complete profiles via Student Information.');
+            ->with('flash_success', 'Successfully imported ' . $n . ' student(s). Default password is "student". Students can complete profiles via Student Information.');
     }
 
     /**
@@ -199,7 +199,7 @@ class StudentBulkController extends Controller
                 continue;
             }
             if ($adm !== '') {
-                $admKey = $year.'|'.$classId.'|'.strtolower($adm);
+                $admKey = $year . '|' . $classId . '|' . strtolower($adm);
                 if (isset($seenAdmKeys[$admKey])) {
                     $errors[$excelRow] = 'duplicate optional_adm_no for the same class and year in this file.';
                     continue;
