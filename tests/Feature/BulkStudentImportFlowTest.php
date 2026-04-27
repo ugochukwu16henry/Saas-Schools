@@ -102,4 +102,69 @@ class BulkStudentImportFlowTest extends TestCase
         $response->assertRedirect(route('students.bulk.create'));
         $response->assertSessionHas('flash_danger', 'The uploaded spreadsheet could not be read. Please use the downloaded template and upload a valid .xlsx or .xls file.');
     }
+
+    public function testBulkImportShowsInlineListWhenParserReportsMissingColumns(): void
+    {
+        $this->withoutMiddleware();
+
+        DB::table('nationalities')->updateOrInsert(['id' => 91001], ['name' => 'Test Nationality']);
+        DB::table('states')->updateOrInsert(['id' => 91001], ['name' => 'Test State']);
+        DB::table('lgas')->updateOrInsert(['id' => 91001], ['state_id' => 91001, 'name' => 'Test LGA']);
+
+        $mock = Mockery::mock(StudentBulkExcelService::class);
+        $mock->shouldReceive('parseStudentSheet')
+            ->once()
+            ->andReturn([
+                'rows'   => [],
+                'errors' => [
+                    'Missing required column: gender',
+                    'Missing required column: class_id',
+                ],
+            ]);
+        $this->app->instance(StudentBulkExcelService::class, $mock);
+
+        $response = $this->from(route('students.bulk.create'))->post(route('students.bulk.store'), [
+            'import_file' => UploadedFile::fake()->create('students.xlsx', 5, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            'nal_id' => 91001,
+            'state_id' => 91001,
+            'lga_id' => 91001,
+            'default_address' => 'Address to be updated from student profile',
+        ]);
+
+        $response->assertRedirect(route('students.bulk.create'));
+
+        $parseErrors = $response->getSession()->get('bulk_import_parse_errors');
+        $this->assertIsArray($parseErrors);
+        $this->assertContains('Missing required column: gender', $parseErrors);
+        $this->assertContains('Missing required column: class_id', $parseErrors);
+    }
+
+    public function testBulkImportShowsInlineListWhenStudentsSheetHasNoDataRows(): void
+    {
+        $this->withoutMiddleware();
+
+        DB::table('nationalities')->updateOrInsert(['id' => 91001], ['name' => 'Test Nationality']);
+        DB::table('states')->updateOrInsert(['id' => 91001], ['name' => 'Test State']);
+        DB::table('lgas')->updateOrInsert(['id' => 91001], ['state_id' => 91001, 'name' => 'Test LGA']);
+
+        $mock = Mockery::mock(StudentBulkExcelService::class);
+        $mock->shouldReceive('parseStudentSheet')
+            ->once()
+            ->andReturn(['rows' => [], 'errors' => []]);
+        $this->app->instance(StudentBulkExcelService::class, $mock);
+
+        $response = $this->from(route('students.bulk.create'))->post(route('students.bulk.store'), [
+            'import_file' => UploadedFile::fake()->create('students.xlsx', 5, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            'nal_id' => 91001,
+            'state_id' => 91001,
+            'lga_id' => 91001,
+            'default_address' => 'Address to be updated from student profile',
+        ]);
+
+        $response->assertRedirect(route('students.bulk.create'));
+
+        $parseErrors = $response->getSession()->get('bulk_import_parse_errors');
+        $this->assertIsArray($parseErrors);
+        $this->assertStringContainsString('No student rows found', $parseErrors[0]);
+    }
 }

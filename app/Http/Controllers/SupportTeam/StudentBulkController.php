@@ -133,13 +133,13 @@ class StudentBulkController extends Controller
 
         if ($parsed['errors']) {
             return $this->bulkImportRedirect($request)
-                ->with('flash_danger', implode(' ', $parsed['errors']));
+                ->with('bulk_import_parse_errors', $parsed['errors']);
         }
 
         $rowData = $parsed['rows'];
         if (count($rowData) === 0) {
             return $this->bulkImportRedirect($request)
-                ->with('flash_danger', 'No student rows found. Add data below the header row in the Students sheet.');
+                ->with('bulk_import_parse_errors', ['No student rows found. Add at least one data row below the header row in the Students sheet.']);
         }
 
         $school = app('currentSchool');

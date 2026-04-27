@@ -36,6 +36,17 @@
         </div>
         @endif
 
+        @if(session('bulk_import_parse_errors'))
+        <div class="alert alert-danger">
+            <strong>Spreadsheet structure errors &mdash; fix the file and re-upload:</strong>
+            <ul class="mb-0">
+                @foreach(session('bulk_import_parse_errors') as $e)
+                <li>{{ $e }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
         @if(session('bulk_import_errors'))
         <div class="alert alert-danger">
             <strong>Fix these rows and re-upload:</strong>
