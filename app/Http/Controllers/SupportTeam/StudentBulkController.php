@@ -89,11 +89,12 @@ class StudentBulkController extends Controller
                 $rawError === 3  => 'The file was only partially uploaded. Check your connection and try again.',
                 $rawError === 6  => 'Server configuration error: temp directory missing. Contact support.',
                 $rawError === 7  => 'Server configuration error: cannot write to temp directory. Contact support.',
-                $rawError === -1 => 'No file was selected. Choose an Excel file (.xlsx or .xls) before submitting. If you are retrying after an error, browsers require you to re-select the file.',
+                $rawError === -1 => 'Upload payload did not include a file part. This usually means the request was sent as application/x-www-form-urlencoded instead of multipart/form-data, or the file was not re-selected after a redirect. Re-select the Excel file and submit again.',
                 default          => 'The file is missing from this request. If you were redirected back after any validation or import error, you must re-select the Excel file before trying again.',
             };
 
-            return $this->bulkImportRedirect($request)->withErrors(['import_file' => $hint]);
+            return $this->bulkImportRedirect($request)
+                ->withErrors(['import_file' => $hint . ' [Upload code: ' . $rawError . ']']);
         }
         if (! $file->isValid()) {
             return $this->bulkImportRedirect($request)

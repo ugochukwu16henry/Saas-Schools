@@ -49,7 +49,7 @@ class BulkStudentImportFlowTest extends TestCase
 
         $response->assertRedirect(route('students.bulk.create'));
         $response->assertSessionHasErrors([
-            'import_file' => 'No file was selected. Choose an Excel file (.xlsx or .xls) before submitting. If you are retrying after an error, browsers require you to re-select the file.',
+            'import_file' => 'Upload payload did not include a file part. This usually means the request was sent as application/x-www-form-urlencoded instead of multipart/form-data, or the file was not re-selected after a redirect. Re-select the Excel file and submit again. [Upload code: -1]',
         ]);
 
         $this->assertEquals(12, session('_old_input.nal_id'));
