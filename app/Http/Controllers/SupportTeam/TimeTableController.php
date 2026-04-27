@@ -23,6 +23,22 @@ class TimeTableController extends Controller
         $this->my_class = $mc;
         $this->exam = $exam;
         $this->year = Qs::getCurrentSession();
+
+        $this->middleware('ability:school.timetables.manage', ['only' => [
+            'store',
+            'update',
+            'delete',
+            'store_time_slot',
+            'use_time_slot',
+            'edit_time_slot',
+            'update_time_slot',
+            'delete_time_slot',
+            'manage',
+            'store_record',
+            'edit_record',
+            'update_record',
+            'delete_record',
+        ]]);
     }
 
     public function index()
@@ -43,7 +59,7 @@ class TimeTableController extends Controller
         $d['subjects'] = $this->my_class->getSubject(['my_class_id' => $ttr->my_class_id])->get();
         $d['my_class'] = $this->my_class->find($ttr->my_class_id);
 
-        if($ttr->exam_id){
+        if ($ttr->exam_id) {
             $d['exam_id'] = $ttr->exam_id;
             $d['exam'] = $this->exam->find($ttr->exam_id);
         }
@@ -58,8 +74,8 @@ class TimeTableController extends Controller
         $data = $req->all();
         $tms = $this->tt->findTimeSlot($req->ts_id);
         $d_date = $req->exam_date ?? $req->day;
-        $data['timestamp_from'] = strtotime($d_date.' '.$tms->time_from);
-        $data['timestamp_to'] = strtotime($d_date.' '.$tms->time_to);
+        $data['timestamp_from'] = strtotime($d_date . ' ' . $tms->time_from);
+        $data['timestamp_to'] = strtotime($d_date . ' ' . $tms->time_to);
 
         $this->tt->create($data);
 
@@ -71,13 +87,12 @@ class TimeTableController extends Controller
         $data = $req->all();
         $tms = $this->tt->findTimeSlot($req->ts_id);
         $d_date = $req->exam_date ?? $req->day;
-        $data['timestamp_from'] = strtotime($d_date.' '.$tms->time_from);
-        $data['timestamp_to'] = strtotime($d_date.' '.$tms->time_to);
+        $data['timestamp_from'] = strtotime($d_date . ' ' . $tms->time_from);
+        $data['timestamp_to'] = strtotime($d_date . ' ' . $tms->time_to);
 
         $this->tt->update($tt_id, $data);
 
         return back()->with('flash_success', __('msg.update_ok'));
-
     }
 
     public function delete($tt_id)
@@ -91,13 +106,13 @@ class TimeTableController extends Controller
     public function store_time_slot(TSRequest $req)
     {
         $data = $req->all();
-        $data['time_from'] = $tf =$req->hour_from.':'.$req->min_from.' '.$req->meridian_from;
-        $data['time_to'] = $tt = $req->hour_to.':'.$req->min_to.' '.$req->meridian_to;
+        $data['time_from'] = $tf = $req->hour_from . ':' . $req->min_from . ' ' . $req->meridian_from;
+        $data['time_to'] = $tt = $req->hour_to . ':' . $req->min_to . ' ' . $req->meridian_to;
         $data['timestamp_from'] = strtotime($tf);
         $data['timestamp_to'] = strtotime($tt);
-        $data['full'] = $tf.' - '.$tt;
+        $data['full'] = $tf . ' - ' . $tt;
 
-        if($tf == $tt){
+        if ($tf == $tt) {
             return response()->json(['msg' => __('msg.invalid_time_slot'), 'ok' => FALSE]);
         }
 
@@ -113,13 +128,12 @@ class TimeTableController extends Controller
         $this->tt->deleteTimeSlots(['ttr_id' => $ttr_id]);
         $time_slots = $this->tt->getTimeSlotByTTR($req->ttr_id)->toArray();
 
-        foreach($time_slots as $ts){
+        foreach ($time_slots as $ts) {
             $ts['ttr_id'] = $ttr_id;
             $this->tt->createTimeSlot($ts);
         }
 
         return redirect()->route('ttr.manage', $ttr_id)->with('flash_success', __('msg.update_ok'));
-
     }
 
     public function edit_time_slot($ts_id)
@@ -131,13 +145,13 @@ class TimeTableController extends Controller
     public function update_time_slot(TSRequest $req, $ts_id)
     {
         $data = $req->all();
-        $data['time_from'] = $tf =$req->hour_from.':'.$req->min_from.' '.$req->meridian_from;
-        $data['time_to'] = $tt = $req->hour_to.':'.$req->min_to.' '.$req->meridian_to;
+        $data['time_from'] = $tf = $req->hour_from . ':' . $req->min_from . ' ' . $req->meridian_from;
+        $data['time_to'] = $tt = $req->hour_to . ':' . $req->min_to . ' ' . $req->meridian_to;
         $data['timestamp_from'] = strtotime($tf);
         $data['timestamp_to'] = strtotime($tt);
-        $data['full'] = $tf.' - '.$tt;
+        $data['full'] = $tf . ' - ' . $tt;
 
-        if($tf == $tt){
+        if ($tf == $tt) {
             return back()->with('flash_danger', __('msg.invalid_time_slot'));
         }
 
@@ -173,21 +187,19 @@ class TimeTableController extends Controller
         $d['time_slots'] = $tms = $this->tt->getTimeSlotByTTR($ttr_id);
         $d['tts'] = $tts = $this->tt->getTimeTable(['ttr_id' => $ttr_id]);
 
-        if($ttr->exam_id){
+        if ($ttr->exam_id) {
             $d['exam_id'] = $ttr->exam_id;
             $d['exam'] = $this->exam->find($ttr->exam_id);
             $d['days'] = $days = $tts->unique('exam_date')->pluck('exam_date');
             $d_date = 'exam_date';
-        }
-
-        else{
+        } else {
             $d['days'] = $days = $tts->unique('day')->pluck('day');
             $d_date = 'day';
         }
 
         foreach ($days as $day) {
             foreach ($tms as $tm) {
-                $d_time[] = ['day' => $day, 'time' => $tm->full, 'subject' => $tts->where('ts_id', $tm->id)->where($d_date, $day)->first()->subject->name ?? NULL ];
+                $d_time[] = ['day' => $day, 'time' => $tm->full, 'subject' => $tts->where('ts_id', $tm->id)->where($d_date, $day)->first()->subject->name ?? NULL];
             }
         }
 
@@ -205,26 +217,24 @@ class TimeTableController extends Controller
         $d['time_slots'] = $tms = $this->tt->getTimeSlotByTTR($ttr_id);
         $d['tts'] = $tts = $this->tt->getTimeTable(['ttr_id' => $ttr_id]);
 
-        if($ttr->exam_id){
+        if ($ttr->exam_id) {
             $d['exam_id'] = $ttr->exam_id;
             $d['exam'] = $this->exam->find($ttr->exam_id);
             $d['days'] = $days = $tts->unique('exam_date')->pluck('exam_date');
             $d_date = 'exam_date';
-        }
-
-        else{
+        } else {
             $d['days'] = $days = $tts->unique('day')->pluck('day');
             $d_date = 'day';
         }
 
         foreach ($days as $day) {
             foreach ($tms as $tm) {
-                $d_time[] = ['day' => $day, 'time' => $tm->full, 'subject' => $tts->where('ts_id', $tm->id)->where($d_date, $day)->first()->subject->name ?? NULL ];
+                $d_time[] = ['day' => $day, 'time' => $tm->full, 'subject' => $tts->where('ts_id', $tm->id)->where($d_date, $day)->first()->subject->name ?? NULL];
             }
         }
 
         $d['d_time'] = collect($d_time);
-        $d['s'] = Setting::all()->flatMap(function($s){
+        $d['s'] = Setting::all()->flatMap(function ($s) {
             return [$s->type => $s->description];
         });
 

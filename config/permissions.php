@@ -27,5 +27,8 @@ return [
         'school.exams.manage' => ['super_admin', 'admin'],
         'school.payments.manage' => ['super_admin', 'admin', 'accountant'],
         'school.marks.manage' => ['super_admin', 'admin', 'teacher'],
+        'school.timetables.manage' => ['super_admin', 'admin'],
+        'school.pins.manage' => ['super_admin', 'admin'],
+        'school.promotions.manage' => ['super_admin', 'admin'],
     ],
 ];
