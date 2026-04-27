@@ -10,13 +10,29 @@ class PlatformNotificationService
 {
     public function push(string $type, string $title, string $message, ?School $school = null, array $payload = []): PlatformNotification
     {
-        return PlatformNotification::create([
+        $notification = PlatformNotification::create([
             'type' => $type,
             'title' => $title,
             'message' => $message,
             'school_id' => optional($school)->id,
             'payload' => $payload,
         ]);
+
+        app(OutboundWebhookService::class)->dispatch($this->mapEventType($type), $notification);
+
+        return $notification;
+    }
+
+    private function mapEventType(string $type): string
+    {
+        $map = [
+            'school_registered' => 'school.registered',
+            'payment_failure' => 'billing.payment_failure',
+            'billing_suspension' => 'billing.school_suspended',
+            'plan_override_updated' => 'school.plan_override_updated',
+        ];
+
+        return $map[$type] ?? 'platform.notification';
     }
 
     public function schoolRegistered(School $school, User $owner): PlatformNotification

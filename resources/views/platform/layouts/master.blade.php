@@ -39,6 +39,9 @@
                     <a href="{{ route('platform.notifications.index') }}" class="nav-link">Notifications</a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ route('platform.webhooks.index') }}" class="nav-link">Webhooks</a>
+                </li>
+                <li class="nav-item">
                     <a href="{{ route('platform.affiliates.index') }}" class="nav-link">Affiliates</a>
                 </li>
                 <li class="nav-item">
