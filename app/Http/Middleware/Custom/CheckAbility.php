@@ -47,6 +47,8 @@ class CheckAbility
     {
         $guardHint = $this->resolveGuardHint($request);
 
+        // Guard-hinted routes must resolve actor strictly from that guard.
+        // platform_admin (platform owner) is distinct from school super_admin.
         if ($guardHint === 'platform') {
             return Auth::guard('platform')->check() ? 'platform_admin' : null;
         }

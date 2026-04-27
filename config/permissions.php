@@ -8,9 +8,12 @@ return [
     |
     | Map named abilities to actor types that are allowed to execute them.
     | Actor types resolve from current guard/context:
-    | - platform_admin (auth:platform)
+    | - platform_admin (auth:platform) - app owner context
     | - affiliate (auth:affiliate)
     | - school user types (super_admin, admin, teacher, accountant, etc)
+    |
+    | NOTE: school super_admin is a tenant role and is NOT the same actor
+    | as platform_admin.
     |
     */
     'abilities' => [

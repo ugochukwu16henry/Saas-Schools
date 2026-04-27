@@ -64,6 +64,21 @@ Important:
 -   `.env.example` is a template only; keep secrets empty there.
 -   Do not expose backend secrets to frontend. Only `MIX_*` values are bundled client-side.
 
+### **Auth/Session Troubleshooting**
+
+If sign-in shows `419 Page Expired`:
+
+-   Ensure `SESSION_DOMAIN` is either empty (unset) or a valid host only (no scheme/path), for example `your-domain.com`
+-   In local HTTP development, set `SESSION_SECURE_COOKIE=false`; for HTTPS production, keep it `true`
+-   Clear caches after env/config changes: `php artisan config:clear` and `php artisan cache:clear`
+
+If a School `super_admin` gets `403 You are not allowed to perform this action` on `/super_admin/settings` while also logged into another dashboard:
+
+-   This can happen when multiple guard sessions exist in the same browser
+-   `platform_admin` (platform owner) is different from school `super_admin` (tenant role)
+-   The ability middleware resolves actor type using route guard hints, so school routes use school actor context and platform routes use platform actor context
+-   If needed, sign out from other dashboards and retry in a fresh tab/session
+
 **Login Credentials**
 After seeding. Login details as follows:
 
