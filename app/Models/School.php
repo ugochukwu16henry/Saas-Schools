@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class School extends Model
 {
@@ -56,5 +57,34 @@ class School extends Model
     public function isActive(): bool
     {
         return in_array($this->status, ['active', 'trial']);
+    }
+
+    public function getLogoAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $raw = (string) $value;
+
+        if (filter_var($raw, FILTER_VALIDATE_URL)) {
+            $path = (string) parse_url($raw, PHP_URL_PATH);
+            if ($path !== '' && (Str::startsWith($path, '/storage/') || Str::startsWith($path, '/global_assets/'))) {
+                return asset(ltrim($path, '/'));
+            }
+
+            return $raw;
+        }
+
+        $clean = ltrim($raw, '/');
+        if (Str::startsWith($clean, 'storage/') || Str::startsWith($clean, 'global_assets/')) {
+            return asset($clean);
+        }
+
+        if (Str::startsWith($clean, 'uploads/')) {
+            return asset('storage/' . $clean);
+        }
+
+        return asset($clean);
     }
 }

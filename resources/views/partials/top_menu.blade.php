@@ -1,8 +1,11 @@
 <div class="navbar navbar-expand-md navbar-dark">
     <div class="navbar-brand mt-1 mr-5">
         <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center" style="gap:8px; text-decoration:none;">
-            @if(!empty($currentSchool->logo))
-                <img src="{{ $currentSchool->logo }}" alt="{{ !empty($currentSchool->name) ? $currentSchool->name : 'School' }}" style="height:40px; width:auto; object-fit:contain; max-width:140px;">
+            @php
+            $schoolLogo = !empty($currentSchool->logo ?? null) ? $currentSchool->logo : Qs::getSetting('logo');
+            @endphp
+            @if(!empty($schoolLogo))
+            <img src="{{ $schoolLogo }}" alt="{{ !empty($currentSchool->name ?? null) ? $currentSchool->name : 'School' }}" style="height:40px; width:auto; object-fit:contain; max-width:140px;">
             @endif
             <span class="text-white font-weight-semibold" style="line-height:1.1;">{{ !empty($currentSchool->name) ? $currentSchool->name : 'School Dashboard' }}</span>
         </a>
@@ -28,7 +31,7 @@
 
         </ul>
 
-			<span class="navbar-text ml-md-3 mr-md-auto"></span>
+        <span class="navbar-text ml-md-3 mr-md-auto"></span>
         <ul class="navbar-nav">
             <li class="nav-item dropdown dropdown-user">
                 <a href="#" class="navbar-nav-link dropdown-toggle" data-toggle="dropdown">

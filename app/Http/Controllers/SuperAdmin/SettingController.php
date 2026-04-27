@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Helpers\Qs;
+use App\Models\School;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SettingUpdate;
 use App\Repositories\MyClassRepo;
@@ -20,9 +21,9 @@ class SettingController extends Controller
 
     public function index()
     {
-         $s = $this->setting->all();
-         $d['class_types'] = $this->my_class->getTypes();
-         $d['s'] = $s->flatMap(function($s){
+        $s = $this->setting->all();
+        $d['class_types'] = $this->my_class->getTypes();
+        $d['s'] = $s->flatMap(function ($s) {
             return [$s->type => $s->description];
         });
         return view('pages.super_admin.settings', $d);
@@ -34,20 +35,25 @@ class SettingController extends Controller
         $sets['lock_exam'] = $sets['lock_exam'] == 1 ? 1 : 0;
         $keys = array_keys($sets);
         $values = array_values($sets);
-        for($i=0; $i<count($sets); $i++){
+        for ($i = 0; $i < count($sets); $i++) {
             $this->setting->update($keys[$i], $values[$i]);
         }
 
-        if($req->hasFile('logo')) {
+        if ($req->hasFile('logo')) {
             $logo = $req->file('logo');
             $f = Qs::getFileMetaData($logo);
             $f['name'] = 'logo.' . $f['ext'];
             $f['path'] = $logo->storeAs(Qs::getPublicUploadPath(), $f['name']);
-            $logo_path = asset('storage/' . $f['path']);
+            $logo_path = '/storage/' . ltrim($f['path'], '/');
             $this->setting->update('logo', $logo_path);
+
+            // Keep school.logo aligned with settings logo used across tenant layouts.
+            $schoolId = optional(auth()->user())->school_id;
+            if ($schoolId) {
+                School::where('id', $schoolId)->update(['logo' => $logo_path]);
+            }
         }
 
         return back()->with('flash_success', __('msg.update_ok'));
-
     }
 }

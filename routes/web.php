@@ -29,6 +29,24 @@ Route::get('/healthz', function () {
     ], 200);
 })->name('healthz');
 
+// Fallback for environments where public/storage symlink is missing.
+Route::get('/storage/{path}', function ($path) {
+    $storageRoot = realpath(storage_path('app/public'));
+    $target = storage_path('app/public/' . ltrim((string) $path, '/'));
+    $resolved = realpath($target);
+
+    if (
+        !$storageRoot ||
+        !$resolved ||
+        strpos($resolved, $storageRoot) !== 0 ||
+        !is_file($resolved)
+    ) {
+        abort(404);
+    }
+
+    return response()->file($resolved);
+})->where('path', '.*');
+
 //Route::get('/test', 'TestController@index')->name('test');
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
