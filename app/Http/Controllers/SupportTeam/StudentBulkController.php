@@ -65,6 +65,8 @@ class StudentBulkController extends Controller
         if ($file === null) {
             // Build a detailed reason for the log and a user-facing hint.
             $rawError = isset($_FILES['import_file']['error']) ? (int) $_FILES['import_file']['error'] : -1;
+            $contentType = (string) $request->header('Content-Type', '');
+            $isMultipart = stripos($contentType, 'multipart/form-data') !== false;
             $phpErrMap = [
                 0  => 'UPLOAD_ERR_OK (no error — but file still missing from FileBag)',
                 1  => 'UPLOAD_ERR_INI_SIZE — file exceeds upload_max_filesize (' . ini_get('upload_max_filesize') . ')',
@@ -81,9 +83,21 @@ class StudentBulkController extends Controller
                 'raw_files_has_key' => array_key_exists('import_file', $_FILES),
                 'raw_error_code'    => $rawError,
                 'reason'            => $reason,
+                'is_multipart'      => $isMultipart,
+                'content_type'      => $contentType === '' ? 'not-set' : $contentType,
+                'files_bag_type'    => gettype($request->files->get('import_file')),
+                'raw_file_snapshot' => array_key_exists('import_file', $_FILES)
+                    ? [
+                        'name' => is_array($_FILES['import_file']['name'] ?? null) ? 'array' : ($_FILES['import_file']['name'] ?? null),
+                        'type' => is_array($_FILES['import_file']['type'] ?? null) ? 'array' : ($_FILES['import_file']['type'] ?? null),
+                        'tmp_name' => is_array($_FILES['import_file']['tmp_name'] ?? null) ? 'array' : ($_FILES['import_file']['tmp_name'] ?? null),
+                        'size' => is_array($_FILES['import_file']['size'] ?? null) ? 'array' : ($_FILES['import_file']['size'] ?? null),
+                    ]
+                    : null,
             ]);
 
             $hint = match (true) {
+                $rawError === 0  => 'Upload reached the server, but the file could not be read by the application. This usually indicates a malformed multipart request, a proxy/WAF rewriting upload payloads, or a browser/network interruption. Hard-refresh the page, re-select the file, and try again. If it persists, try another browser and contact support.',
                 $rawError === 4  => 'No file was selected. Choose an Excel file (.xlsx or .xls) before submitting. If you are retrying after an error, browsers require you to re-select the file.',
                 $rawError === 1  => 'The file is too large for the server upload limit (' . $this->formatIniLimit((string) ini_get('upload_max_filesize')) . '). Split the spreadsheet into smaller batches.',
                 $rawError === 3  => 'The file was only partially uploaded. Check your connection and try again.',
