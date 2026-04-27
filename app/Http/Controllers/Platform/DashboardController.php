@@ -65,13 +65,22 @@ class DashboardController extends Controller
 
         $schools = $query->latest()->paginate(20)->appends($request->query());
 
+        $schoolsIdSubquery = School::query()->select('id');
+
         $stats = [
             'total_schools' => School::count(),
             'active_schools' => School::where('status', 'active')->count(),
             'trial_schools' => School::where('status', 'trial')->count(),
             'suspended_schools' => School::where('status', 'suspended')->count(),
-            'students' => DB::table('users')->where('user_type', 'student')->count(),
-            'teachers' => DB::table('users')->where('user_type', 'teacher')->count(),
+            // Scope platform-level user totals to users linked to existing schools.
+            'students' => DB::table('users')
+                ->where('user_type', 'student')
+                ->whereIn('school_id', $schoolsIdSubquery)
+                ->count(),
+            'teachers' => DB::table('users')
+                ->where('user_type', 'teacher')
+                ->whereIn('school_id', $schoolsIdSubquery)
+                ->count(),
             'total_affiliates' => Affiliate::count(),
             'pending_affiliates' => Affiliate::where('status', 'pending')->count(),
             'approved_affiliates' => Affiliate::where('status', 'approved')->count(),
