@@ -60,6 +60,54 @@
     </div>
 </div>
 
+<div class="row mb-2">
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-danger text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['risk_critical'] ?? 0) }}</h3>
+                <i class="icon-warning22 font-size-24"></i>
+            </div>
+            <div>Billing Risk: Critical</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-warning text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['risk_high'] ?? 0) }}</h3>
+                <i class="icon-alert font-size-24"></i>
+            </div>
+            <div>Billing Risk: High</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-info text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['risk_medium'] ?? 0) }}</h3>
+                <i class="icon-info22 font-size-24"></i>
+            </div>
+            <div>Billing Risk: Medium</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-success text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['risk_low'] ?? 0) }}</h3>
+                <i class="icon-checkmark-circle font-size-24"></i>
+            </div>
+            <div>Billing Risk: Low</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-secondary text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['risk_unknown'] ?? 0) }}</h3>
+                <i class="icon-question3 font-size-24"></i>
+            </div>
+            <div>Billing Risk: Unknown</div>
+        </div>
+    </div>
+</div>
+
 {{-- Affiliate summary --}}
 <div class="row mb-3">
     <div class="col-sm-4">
@@ -143,17 +191,38 @@
     </div>
 
     <div class="card-body border-top-0">
+        <div class="mb-3 d-flex flex-wrap" style="gap:8px;">
+            <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'critical'])) }}" class="btn btn-sm {{ request('risk') === 'critical' ? 'btn-danger' : 'btn-outline-danger' }}">Critical ({{ number_format($stats['risk_critical'] ?? 0) }})</a>
+            <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'high'])) }}" class="btn btn-sm {{ request('risk') === 'high' ? 'btn-warning' : 'btn-outline-warning' }}">High ({{ number_format($stats['risk_high'] ?? 0) }})</a>
+            <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'medium'])) }}" class="btn btn-sm {{ request('risk') === 'medium' ? 'btn-info' : 'btn-outline-info' }}">Medium ({{ number_format($stats['risk_medium'] ?? 0) }})</a>
+            <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'low'])) }}" class="btn btn-sm {{ request('risk') === 'low' ? 'btn-success' : 'btn-outline-success' }}">Low ({{ number_format($stats['risk_low'] ?? 0) }})</a>
+            <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'unknown'])) }}" class="btn btn-sm {{ request('risk') === 'unknown' ? 'btn-secondary' : 'btn-outline-secondary' }}">Unknown ({{ number_format($stats['risk_unknown'] ?? 0) }})</a>
+            @if(request()->filled('risk'))
+            <a href="{{ route('platform.dashboard', array_filter(request()->except('risk'))) }}" class="btn btn-sm btn-light">Clear Risk Filter</a>
+            @endif
+        </div>
+
         <form method="GET" action="{{ route('platform.dashboard') }}" class="mb-3">
             <div class="row">
-                <div class="col-md-5 mb-2">
+                <div class="col-md-4 mb-2">
                     <input type="text" name="q" class="form-control" placeholder="Search by name, email, phone or slug" value="{{ request('q') }}">
                 </div>
-                <div class="col-md-3 mb-2">
+                <div class="col-md-2 mb-2">
                     <select name="status" class="form-control">
                         <option value="">All Statuses</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                         <option value="trial" {{ request('status') === 'trial' ? 'selected' : '' }}>Trial</option>
                         <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <select name="risk" class="form-control">
+                        <option value="">All Risks</option>
+                        <option value="critical" {{ request('risk') === 'critical' ? 'selected' : '' }}>Critical</option>
+                        <option value="high" {{ request('risk') === 'high' ? 'selected' : '' }}>High</option>
+                        <option value="medium" {{ request('risk') === 'medium' ? 'selected' : '' }}>Medium</option>
+                        <option value="low" {{ request('risk') === 'low' ? 'selected' : '' }}>Low</option>
+                        <option value="unknown" {{ request('risk') === 'unknown' ? 'selected' : '' }}>Unknown</option>
                     </select>
                 </div>
                 <div class="col-md-4 mb-2">
@@ -166,20 +235,44 @@
         <div class="table-responsive">
             <table class="table table-striped table-bordered">
                 <thead>
-                <tr>
-                    <th>School</th>
-                    <th>Contact</th>
-                    <th class="text-center">Teachers</th>
-                    <th class="text-center">Students</th>
-                    <th class="text-center">Total Users</th>
-                    <th>Status</th>
-                    <th>Subscription</th>
-                    <th>Created</th>
-                    <th class="text-center" style="min-width:250px;">Actions</th>
-                </tr>
+                    <tr>
+                        <th>School</th>
+                        <th>Contact</th>
+                        <th class="text-center">Teachers</th>
+                        <th class="text-center">Students</th>
+                        <th class="text-center">Total Users</th>
+                        <th>Status</th>
+                        <th>Billing Risk</th>
+                        <th>Subscription</th>
+                        <th>Created</th>
+                        <th class="text-center" style="min-width:250px;">Actions</th>
+                    </tr>
                 </thead>
                 <tbody>
-                @forelse($schools as $school)
+                    @forelse($schools as $school)
+                    @php
+                    $sub = $school->subscription;
+                    $failureCount = (int) ($sub->payment_failures_count ?? 0);
+                    $graceEndsAt = optional($sub)->grace_period_ends_at;
+                    $isGraceExpired = $graceEndsAt ? $graceEndsAt->lte(now()) : false;
+
+                    if (!$sub) {
+                    $riskLabel = 'Unknown';
+                    $riskClass = 'secondary';
+                    } elseif (in_array((string) $sub->status, ['expired', 'cancelled'], true) || $school->status === 'suspended') {
+                    $riskLabel = 'Critical';
+                    $riskClass = 'danger';
+                    } elseif ($isGraceExpired || $failureCount >= 2) {
+                    $riskLabel = 'High';
+                    $riskClass = 'warning';
+                    } elseif ($failureCount >= 1) {
+                    $riskLabel = 'Medium';
+                    $riskClass = 'info';
+                    } else {
+                    $riskLabel = 'Low';
+                    $riskClass = 'success';
+                    }
+                    @endphp
                     <tr>
                         <td>
                             <div class="font-weight-semibold">{{ $school->name }}</div>
@@ -195,20 +288,23 @@
                         <td class="text-center">{{ number_format($school->total_users_count) }}</td>
                         <td>
                             @if($school->status === 'active')
-                                <span class="badge badge-success">Active</span>
+                            <span class="badge badge-success">Active</span>
                             @elseif($school->status === 'trial')
-                                <span class="badge badge-primary">Trial</span>
+                            <span class="badge badge-primary">Trial</span>
                             @else
-                                <span class="badge badge-warning">Suspended</span>
+                            <span class="badge badge-warning">Suspended</span>
                             @endif
                         </td>
                         <td>
+                            <span class="badge badge-{{ $riskClass }}">{{ $riskLabel }}</span>
+                        </td>
+                        <td>
                             @if($school->subscription)
-                                <span class="badge badge-{{ $school->subscription->isActive() ? 'success' : 'secondary' }}">
-                                    {{ ucfirst($school->subscription->status) }}
-                                </span>
+                            <span class="badge badge-{{ $school->subscription->isActive() ? 'success' : 'secondary' }}">
+                                {{ ucfirst($school->subscription->status) }}
+                            </span>
                             @else
-                                <span class="badge badge-light">None</span>
+                            <span class="badge badge-light">None</span>
                             @endif
                         </td>
                         <td>{{ optional($school->created_at)->format('d M Y') }}</td>
@@ -216,17 +312,17 @@
                             <a class="btn btn-sm btn-info" href="{{ route('platform.schools.show', $school) }}">View</a>
 
                             @if($school->status === 'suspended')
-                                <form method="POST" action="{{ route('platform.schools.activate', $school) }}" class="d-inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn btn-sm btn-success">Activate</button>
-                                </form>
+                            <form method="POST" action="{{ route('platform.schools.activate', $school) }}" class="d-inline">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="btn btn-sm btn-success">Activate</button>
+                            </form>
                             @else
-                                <form method="POST" action="{{ route('platform.schools.suspend', $school) }}" class="d-inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn btn-sm btn-warning">Suspend</button>
-                                </form>
+                            <form method="POST" action="{{ route('platform.schools.suspend', $school) }}" class="d-inline">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="btn btn-sm btn-warning">Suspend</button>
+                            </form>
                             @endif
 
                             <form method="POST" action="{{ route('platform.schools.destroy', $school) }}" class="d-inline" onsubmit="return confirm('Delete this school and all its data permanently?');">
@@ -236,11 +332,11 @@
                             </form>
                         </td>
                     </tr>
-                @empty
+                    @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted">No schools found.</td>
+                        <td colspan="10" class="text-center text-muted">No schools found.</td>
                     </tr>
-                @endforelse
+                    @endforelse
                 </tbody>
             </table>
         </div>
