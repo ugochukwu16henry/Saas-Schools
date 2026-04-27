@@ -7,11 +7,6 @@
         {!! Qs::getPanelOptions() !!}
     </div>
     <div class="card-body">
-        @php
-        $uploadMax = ini_get('upload_max_filesize');
-        $postMax = ini_get('post_max_size');
-        @endphp
-
         <p class="text-muted">
             Download the template, fill the <strong>Students</strong> sheet, then upload here.
             Default login password for new students is <strong>student</strong>.
@@ -19,9 +14,10 @@
         </p>
         <div class="alert alert-info py-2">
             <strong>Upload limits:</strong>
-            Server upload_max_filesize = <strong>{{ $uploadMax }}</strong>,
-            post_max_size = <strong>{{ $postMax }}</strong>.
-            If your file exceeds either limit, upload can fail before import starts.
+            Server upload_max_filesize = <strong>{{ $uploadMaxDisplay ?? 'Unknown' }}</strong>,
+            post_max_size = <strong>{{ $postMaxDisplay ?? 'Unknown' }}</strong>,
+            app import limit = <strong>{{ $appUploadLimitDisplay ?? '10 MB' }}</strong>.
+            If your file exceeds any enforced limit, upload can fail before import starts.
         </div>
         <p>
             <a href="{{ route('students.bulk.template') }}" class="btn btn-outline-primary">Download Excel template</a>
@@ -56,6 +52,7 @@
             <div class="form-group">
                 <label>Excel file (.xlsx or .xls) <span class="text-danger">*</span></label>
                 <input type="file" name="import_file" class="form-control" accept=".xlsx,.xls" required>
+                <small class="form-text text-muted">Browsers do not keep a selected file after a failed submit or redirect. Re-select the Excel file every time you retry.</small>
             </div>
 
             <div class="row">

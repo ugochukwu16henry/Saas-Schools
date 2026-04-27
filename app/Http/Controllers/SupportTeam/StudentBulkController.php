@@ -26,6 +26,9 @@ class StudentBulkController extends Controller
     {
         $data['nationals'] = $loc->getAllNationals();
         $data['states'] = $loc->getAllStates();
+        $data['uploadMaxDisplay'] = $this->formatIniLimit((string) ini_get('upload_max_filesize'));
+        $data['postMaxDisplay'] = $this->formatIniLimit((string) ini_get('post_max_size'));
+        $data['appUploadLimitDisplay'] = $this->humanReadableBytes($this->bulkImportMaxBytes());
 
         return view('pages.support_team.students.bulk', $data);
     }
@@ -55,7 +58,7 @@ class StudentBulkController extends Controller
         $postMaxBytes = $this->iniSizeToBytes((string) ini_get('post_max_size'));
         if ($postMaxBytes > 0 && $contentLength > $postMaxBytes) {
             return $this->bulkImportRedirect($request)
-                ->withErrors(['import_file' => 'Upload failed before processing: request size exceeds server post_max_size (' . ini_get('post_max_size') . '). Ask your host/admin to increase post_max_size and upload_max_filesize.']);
+                ->withErrors(['import_file' => 'Upload failed before processing: request size exceeds server post_max_size (' . $this->formatIniLimit((string) ini_get('post_max_size')) . '). Ask your host/admin to increase post_max_size and upload_max_filesize, or split the spreadsheet into smaller batches.']);
         }
 
         $file = $this->resolveImportFile($request);
@@ -81,13 +84,13 @@ class StudentBulkController extends Controller
             ]);
 
             $hint = match (true) {
-                $rawError === 4  => 'No file was selected. Please choose an Excel file (.xlsx or .xls) before submitting.',
-                $rawError === 1  => 'The file is too large (server limit: ' . ini_get('upload_max_filesize') . '). Split the spreadsheet into smaller batches.',
+                $rawError === 4  => 'No file was selected. Choose an Excel file (.xlsx or .xls) before submitting. If you are retrying after an error, browsers require you to re-select the file.',
+                $rawError === 1  => 'The file is too large for the server upload limit (' . $this->formatIniLimit((string) ini_get('upload_max_filesize')) . '). Split the spreadsheet into smaller batches.',
                 $rawError === 3  => 'The file was only partially uploaded. Check your connection and try again.',
                 $rawError === 6  => 'Server configuration error: temp directory missing. Contact support.',
                 $rawError === 7  => 'Server configuration error: cannot write to temp directory. Contact support.',
-                $rawError === -1 => 'The file did not reach the server (possible size limit: post_max_size=' . ini_get('post_max_size') . '). Try a smaller file or contact support.',
-                default          => 'Please upload an Excel file (.xlsx or .xls). If you were redirected here after an error, you must re-select the file.',
+                $rawError === -1 => 'No file was selected. Choose an Excel file (.xlsx or .xls) before submitting. If you are retrying after an error, browsers require you to re-select the file.',
+                default          => 'The file is missing from this request. If you were redirected back after any validation or import error, you must re-select the Excel file before trying again.',
             };
 
             return $this->bulkImportRedirect($request)->withErrors(['import_file' => $hint]);
@@ -102,10 +105,10 @@ class StudentBulkController extends Controller
             return $this->bulkImportRedirect($request)
                 ->withErrors(['import_file' => 'Only .xlsx or .xls files are allowed.']);
         }
-        $maxBytes = 10240 * 1024;
+        $maxBytes = $this->bulkImportMaxBytes();
         if ($file->getSize() > $maxBytes) {
             return $this->bulkImportRedirect($request)
-                ->withErrors(['import_file' => 'The file may not be greater than 10 MB.']);
+                ->withErrors(['import_file' => 'The file may not be greater than ' . $this->humanReadableBytes($maxBytes) . '.']);
         }
 
         Validator::make($request->only(['nal_id', 'state_id', 'lga_id', 'default_address']), [
@@ -367,6 +370,11 @@ class StudentBulkController extends Controller
         return back()->withInput($request->input());
     }
 
+    protected function bulkImportMaxBytes(): int
+    {
+        return 10240 * 1024;
+    }
+
     /**
      * Convert php.ini size shorthand (e.g. 2M, 1G) to bytes.
      */
@@ -392,5 +400,32 @@ class StudentBulkController extends Controller
         }
 
         return (int) $value;
+    }
+
+    protected function formatIniLimit(string $size): string
+    {
+        $size = trim($size);
+        if ($size === '' || $this->iniSizeToBytes($size) === 0) {
+            return 'Unlimited';
+        }
+
+        return $size;
+    }
+
+    protected function humanReadableBytes(int $bytes): string
+    {
+        if ($bytes >= 1073741824) {
+            return rtrim(rtrim(number_format($bytes / 1073741824, 2), '0'), '.') . ' GB';
+        }
+
+        if ($bytes >= 1048576) {
+            return rtrim(rtrim(number_format($bytes / 1048576, 2), '0'), '.') . ' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return rtrim(rtrim(number_format($bytes / 1024, 2), '0'), '.') . ' KB';
+        }
+
+        return $bytes . ' B';
     }
 }
