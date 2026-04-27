@@ -128,15 +128,15 @@ Route::group(['prefix' => 'platform'], function () {
         Route::patch('/affiliates/{affiliate}/payouts/{payout}/paid', 'Platform\AffiliateAdminController@markPayoutPaid')->name('platform.affiliates.payouts.paid');
         Route::delete('/affiliates/{affiliate}', 'Platform\AffiliateAdminController@destroy')->name('platform.affiliates.destroy');
         Route::get('/revenue', 'Platform\RevenueController@index')->name('platform.revenue');
-        Route::get('/billing-plans', 'Platform\BillingPlanController@index')->name('platform.billing_plans.index');
-        Route::post('/billing-plans', 'Platform\BillingPlanController@store')->name('platform.billing_plans.store');
-        Route::patch('/billing-plans/{billingPlan}', 'Platform\BillingPlanController@update')->name('platform.billing_plans.update');
-        Route::patch('/schools/{school}/plan', 'Platform\\DashboardController@updatePlan')->name('platform.schools.update_plan');
-        Route::patch('/schools/{school}/billing-plan', 'Platform\\DashboardController@updateBillingPlan')->name('platform.schools.update_billing_plan');
+        Route::get('/billing-plans', 'Platform\BillingPlanController@index')->middleware('ability:platform.billing_plans.manage')->name('platform.billing_plans.index');
+        Route::post('/billing-plans', 'Platform\BillingPlanController@store')->middleware('ability:platform.billing_plans.manage')->name('platform.billing_plans.store');
+        Route::patch('/billing-plans/{billingPlan}', 'Platform\BillingPlanController@update')->middleware('ability:platform.billing_plans.manage')->name('platform.billing_plans.update');
+        Route::patch('/schools/{school}/plan', 'Platform\\DashboardController@updatePlan')->middleware('ability:platform.schools.manage')->name('platform.schools.update_plan');
+        Route::patch('/schools/{school}/billing-plan', 'Platform\\DashboardController@updateBillingPlan')->middleware('ability:platform.schools.manage')->name('platform.schools.update_billing_plan');
         Route::get('/schools/{school}', 'Platform\DashboardController@show')->name('platform.schools.show');
-        Route::patch('/schools/{school}/suspend', 'Platform\DashboardController@suspend')->name('platform.schools.suspend');
-        Route::patch('/schools/{school}/activate', 'Platform\DashboardController@activate')->name('platform.schools.activate');
-        Route::delete('/schools/{school}', 'Platform\DashboardController@destroy')->name('platform.schools.destroy');
+        Route::patch('/schools/{school}/suspend', 'Platform\DashboardController@suspend')->middleware('ability:platform.schools.manage')->name('platform.schools.suspend');
+        Route::patch('/schools/{school}/activate', 'Platform\DashboardController@activate')->middleware('ability:platform.schools.manage')->name('platform.schools.activate');
+        Route::delete('/schools/{school}', 'Platform\DashboardController@destroy')->middleware('ability:platform.schools.manage')->name('platform.schools.destroy');
     });
 });
 
@@ -175,7 +175,7 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
         Route::group(['prefix' => 'students'], function () {
             Route::get('bulk/template', 'StudentBulkController@downloadTemplate')->name('students.bulk.template');
             Route::get('bulk', 'StudentBulkController@create')->name('students.bulk.create');
-            Route::post('bulk', 'StudentBulkController@store')->name('students.bulk.store');
+            Route::post('bulk', 'StudentBulkController@store')->middleware('ability:school.students.bulk_import')->name('students.bulk.store');
 
             Route::get('reset_pass/{st_id}', 'StudentRecordController@reset_pass')->name('st.reset_pass');
             Route::get('graduated', 'StudentRecordController@graduated')->name('students.graduated');
@@ -307,7 +307,7 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
 Route::group(['namespace' => 'SuperAdmin', 'middleware' => 'super_admin', 'prefix' => 'super_admin'], function () {
 
     Route::get('/settings', 'SettingController@index')->name('settings');
-    Route::put('/settings', 'SettingController@update')->name('settings.update');
+    Route::put('/settings', 'SettingController@update')->middleware('ability:school.settings.manage')->name('settings.update');
 });
 
 /************************ PARENT ****************************/
