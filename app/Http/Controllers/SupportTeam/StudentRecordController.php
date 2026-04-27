@@ -27,8 +27,9 @@ class StudentRecordController extends Controller
 
     public function __construct(LocationRepo $loc, MyClassRepo $my_class, UserRepo $user, StudentRepo $student, StudentAdmissionService $admissionService)
     {
-        $this->middleware('teamSA', ['only' => ['edit', 'update', 'reset_pass', 'create', 'store', 'graduated']]);
+        $this->middleware('teamSA', ['only' => ['edit', 'update', 'reset_pass', 'create', 'store', 'graduated', 'not_graduated']]);
         $this->middleware('super_admin', ['only' => ['destroy',]]);
+        $this->middleware('ability:school.students.manage', ['only' => ['edit', 'update', 'reset_pass', 'create', 'store', 'graduated', 'not_graduated', 'destroy']]);
 
         $this->loc = $loc;
         $this->my_class = $my_class;

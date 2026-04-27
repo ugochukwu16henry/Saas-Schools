@@ -20,6 +20,8 @@ return [
 
         // School-side capabilities
         'school.settings.manage' => ['super_admin', 'admin'],
+        'school.users.manage' => ['super_admin', 'admin'],
+        'school.students.manage' => ['super_admin', 'admin'],
         'school.students.bulk_import' => ['super_admin', 'admin'],
     ],
 ];
