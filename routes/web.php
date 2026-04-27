@@ -7,7 +7,30 @@ Route::get('/', function () {
         return redirect()->route('dashboard');
     }
 
-    return view('marketing.home');
+    $pricing = [
+        'freeLimit' => 50,
+        'monthlyRate' => 100,
+        'oneTimeRate' => 500,
+    ];
+
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('billing_plans')) {
+            $defaultPlan = \App\Models\BillingPlan::query()
+                ->where('is_default', true)
+                ->where('is_active', true)
+                ->first();
+
+            if ($defaultPlan) {
+                $pricing['freeLimit'] = (int) $defaultPlan->default_free_student_limit;
+                $pricing['monthlyRate'] = (int) $defaultPlan->monthly_rate_per_student;
+                $pricing['oneTimeRate'] = (int) $defaultPlan->one_time_add_rate;
+            }
+        }
+    } catch (\Throwable $e) {
+        // Keep fallbacks during early boot/migration windows.
+    }
+
+    return view('marketing.home', $pricing);
 })->name('landing');
 
 Route::get('/healthz', function () {

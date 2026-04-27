@@ -37,9 +37,19 @@ class HomeController extends Controller
 
     public function dashboard()
     {
-        $d=[];
-        if(Qs::userIsTeamSAT()){
+        $d = [];
+        if (Qs::userIsTeamSAT()) {
             $d['users'] = $this->user->getAll();
+        }
+
+        if (app()->bound('currentSchool') && Qs::userIsTeamSA()) {
+            $school = app('currentSchool')->loadMissing('billingPlan');
+            $d['billingContext'] = [
+                'plan_name' => optional($school->billingPlan)->name ?: 'Standard',
+                'free_limit' => $school->effectiveFreeStudentLimit(),
+                'monthly_rate' => $school->effectiveMonthlyRate(),
+                'one_time_rate' => $school->effectiveOneTimeAddRate(),
+            ];
         }
 
         return view('pages.support_team.dashboard', $d);

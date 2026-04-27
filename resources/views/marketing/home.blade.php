@@ -37,7 +37,7 @@
                     <a href="{{ route('login') }}" class="btn saas-btn-secondary btn-lg">Sign in</a>
                 </div>
 
-                <div class="mh-trust-note">First 50 students are free for life. Above 50, pay a one-time ₦500 per newly added student and ₦100 per student monthly.</div>
+                <div class="mh-trust-note">First {{ number_format($freeLimit ?? 50) }} students are free for life. Above {{ number_format($freeLimit ?? 50) }}, pay a one-time ₦{{ number_format($oneTimeRate ?? 500) }} per newly added student and ₦{{ number_format($monthlyRate ?? 100) }} per student monthly.</div>
             </div>
         </section>
 
@@ -63,7 +63,7 @@
                 <div class="col-md-4 mb-3">
                     <article class="mh-card">
                         <h3>Finance and Billing</h3>
-                        <p>Enjoy lifetime free access for your first 50 students, then transparent one-time and monthly billing as your school grows.</p>
+                        <p>Enjoy lifetime free access for your first {{ number_format($freeLimit ?? 50) }} students, then transparent one-time and monthly billing as your school grows.</p>
                     </article>
                 </div>
                 <div class="col-md-4 mb-3">
@@ -132,7 +132,7 @@
             <div class="mh-pricing">
                 <div class="mh-pricing-head">
                     <h2>Simple and predictable pricing</h2>
-                    <p>First 50 students are free for life. Billing starts only for students above 50.</p>
+                    <p>First {{ number_format($freeLimit ?? 50) }} students are free for life. Billing starts only for students above {{ number_format($freeLimit ?? 50) }}.</p>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -140,7 +140,7 @@
                             <h3>Starter</h3>
                             <p class="mh-price">Free</p>
                             <ul class="mh-list">
-                                <li>First 50 students free for life</li>
+                                <li>First {{ number_format($freeLimit ?? 50) }} students free for life</li>
                                 <li>Core academic and admin workflows</li>
                                 <li>Secure tenant space</li>
                             </ul>
@@ -149,9 +149,9 @@
                     <div class="col-md-6 mb-3">
                         <div class="mh-price-card mh-price-card-featured">
                             <h3>Growth</h3>
-                            <p class="mh-price">₦100 <span>/student/month above 50</span></p>
+                            <p class="mh-price">₦{{ number_format($monthlyRate ?? 100) }} <span>/student/month above {{ number_format($freeLimit ?? 50) }}</span></p>
                             <ul class="mh-list">
-                                <li>₦500 one-time per newly added student above 50</li>
+                                <li>₦{{ number_format($oneTimeRate ?? 500) }} one-time per newly added student above {{ number_format($freeLimit ?? 50) }}</li>
                                 <li>Scale without migration</li>
                                 <li>Paystack billing support</li>
                                 <li>Platform-level monitoring</li>
@@ -191,7 +191,7 @@
 
                 <div class="faq-item">
                     <h3>How does billing work?</h3>
-                    <p>Your first 50 students are free for life. For each newly added student above 50, there is a one-time ₦500 charge, plus ₦100 monthly per student above 50.</p>
+                    <p>Your first {{ number_format($freeLimit ?? 50) }} students are free for life. For each newly added student above {{ number_format($freeLimit ?? 50) }}, there is a one-time ₦{{ number_format($oneTimeRate ?? 500) }} charge, plus ₦{{ number_format($monthlyRate ?? 100) }} monthly per student above {{ number_format($freeLimit ?? 50) }}.</p>
                 </div>
 
                 <div class="faq-item">

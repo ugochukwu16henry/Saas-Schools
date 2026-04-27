@@ -223,7 +223,7 @@
                     </div>
                     <div class="card-body">
                         <p class="text-muted small mb-3">
-                            Students up to this limit are free; any above are billed at ₦100/student/month.
+                            Students up to this limit are free; any above are billed at ₦{{ number_format($school->effectiveMonthlyRate()) }}/student/month based on the assigned plan.
                             Default is 0 (all students billed).
                         </p>
                         <form method="POST" action="{{ route('platform.schools.update_plan', $school) }}" class="form-inline">
