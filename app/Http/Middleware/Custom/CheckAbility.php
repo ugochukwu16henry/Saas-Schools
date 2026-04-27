@@ -5,6 +5,7 @@ namespace App\Http\Middleware\Custom;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class CheckAbility
 {
@@ -13,7 +14,7 @@ class CheckAbility
      */
     public function handle($request, Closure $next, string $ability)
     {
-        $actor = $this->resolveActorType($request);
+        $actor = $this->resolveActorType($request, $ability);
         if ($actor === null) {
             Log::warning('Ability check failed: unauthenticated actor', [
                 'ability' => $ability,
@@ -43,8 +44,26 @@ class CheckAbility
         abort(403, 'You are not allowed to perform this action.');
     }
 
-    private function resolveActorType($request): ?string
+    private function resolveActorType($request, string $ability): ?string
     {
+        if (Str::startsWith($ability, 'school.')) {
+            if (Auth::guard('web')->check()) {
+                $user = Auth::guard('web')->user();
+
+                return (string) ($user->user_type ?? 'user');
+            }
+
+            return null;
+        }
+
+        if (Str::startsWith($ability, 'platform.')) {
+            return Auth::guard('platform')->check() ? 'platform_admin' : null;
+        }
+
+        if (Str::startsWith($ability, 'affiliate.')) {
+            return Auth::guard('affiliate')->check() ? 'affiliate' : null;
+        }
+
         $guardHint = $this->resolveGuardHint($request);
 
         // Guard-hinted routes must resolve actor strictly from that guard.

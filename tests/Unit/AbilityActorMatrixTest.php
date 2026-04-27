@@ -52,17 +52,9 @@ class AbilityActorMatrixTest extends TestCase
 
         Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
         Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(401);
-        Auth::shouldReceive('check')->never();
-        Auth::shouldReceive('user')->never();
 
         $middleware = new CheckAbility();
         $request = Request::create('/platform/webhooks', 'POST');
-
-        $route = \Mockery::mock();
-        $route->shouldReceive('gatherMiddleware')->once()->andReturn(['web', 'auth:platform', 'ability:platform.webhooks.manage']);
-        $request->setRouteResolver(function () use ($route) {
-            return $route;
-        });
 
         $response = $middleware->handle($request, function () {
             return response('ok', 200);
@@ -74,25 +66,31 @@ class AbilityActorMatrixTest extends TestCase
     public function testSchoolSuperAdminDeniedForPlatformAffiliateAbility()
     {
         config(['permissions.abilities.platform.affiliates.manage' => ['platform_admin']]);
-        $this->mockSchoolActor('super_admin', 303);
+
+        $platformGuard = \Mockery::mock();
+        $platformGuard->shouldReceive('check')->once()->andReturn(false);
+
+        Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
+        Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(303);
 
         $middleware = new CheckAbility();
         $request = Request::create('/platform/affiliates/7/approve', 'PATCH');
 
-        try {
-            $middleware->handle($request, function () {
-                return response('ok', 200);
-            }, 'platform.affiliates.manage');
-            $this->fail('Expected non-platform actor to be denied for platform.affiliates.manage.');
-        } catch (HttpException $e) {
-            $this->assertSame(403, $e->getStatusCode());
-        }
+        $response = $middleware->handle($request, function () {
+            return response('ok', 200);
+        }, 'platform.affiliates.manage');
+
+        $this->assertTrue($response->isRedirect());
+        $this->assertSame(route('login'), $response->getTargetUrl());
     }
 
     private function mockSchoolActor(string $userType, int $userId): void
     {
-        Auth::shouldReceive('check')->once()->andReturn(true);
-        Auth::shouldReceive('user')->once()->andReturn((object) ['user_type' => $userType]);
+        $webGuard = \Mockery::mock();
+        $webGuard->shouldReceive('check')->once()->andReturn(true);
+        $webGuard->shouldReceive('user')->once()->andReturn((object) ['user_type' => $userType]);
+
+        Auth::shouldReceive('guard')->with('web')->twice()->andReturn($webGuard);
         Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn($userId);
     }
 }
