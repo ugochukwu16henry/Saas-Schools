@@ -2,6 +2,29 @@
 
 use Illuminate\Support\Str;
 
+$sessionDomain = env('SESSION_DOMAIN');
+if (is_string($sessionDomain)) {
+    $sessionDomain = trim($sessionDomain);
+
+    // Empty env values should not become an invalid cookie domain.
+    if ($sessionDomain === '') {
+        $sessionDomain = null;
+    } else {
+        // Allow operators to provide full URLs and normalize to host.
+        if (strpos($sessionDomain, '://') !== false) {
+            $parsedHost = parse_url($sessionDomain, PHP_URL_HOST);
+            $sessionDomain = $parsedHost ?: null;
+        }
+
+        if (is_string($sessionDomain)) {
+            $sessionDomain = ltrim($sessionDomain, '.');
+            if ($sessionDomain === '') {
+                $sessionDomain = null;
+            }
+        }
+    }
+}
+
 return [
 
     /*
@@ -155,7 +178,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN') !== null ? trim((string) env('SESSION_DOMAIN')) : null,
+    'domain' => $sessionDomain,
 
     /*
     |--------------------------------------------------------------------------
