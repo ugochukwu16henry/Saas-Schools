@@ -36,6 +36,9 @@
                     <a href="{{ route('platform.revenue') }}" class="nav-link">Revenue</a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ route('platform.usage.index') }}" class="nav-link">Usage</a>
+                </li>
+                <li class="nav-item">
                     <a href="{{ route('platform.notifications.index') }}" class="nav-link">Notifications</a>
                 </li>
                 <li class="nav-item">
@@ -79,6 +82,7 @@
     </div>
 
     @include('partials.inc_bottom')
+    @yield('script')
 </body>
 
 </html>

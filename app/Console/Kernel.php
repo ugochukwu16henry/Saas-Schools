@@ -29,6 +29,29 @@ class Kernel extends ConsoleKernel
 
         // Expire overdue trials and suspend schools that never converted.
         $schedule->command('billing:expire-trials')->hourly();
+
+        if ((bool) config('platform.digest.enabled', false)) {
+            $frequency = strtolower((string) config('platform.digest.frequency', 'daily'));
+            $time = (string) config('platform.digest.time', '08:00');
+
+            if ($frequency === 'weekly') {
+                $dayMap = [
+                    'sunday' => 0,
+                    'monday' => 1,
+                    'tuesday' => 2,
+                    'wednesday' => 3,
+                    'thursday' => 4,
+                    'friday' => 5,
+                    'saturday' => 6,
+                ];
+                $weeklyDay = strtolower((string) config('platform.digest.weekly_day', 'monday'));
+                $dayIndex = $dayMap[$weeklyDay] ?? 1;
+
+                $schedule->command('platform:send-digest --period=auto')->weeklyOn($dayIndex, $time);
+            } else {
+                $schedule->command('platform:send-digest --period=auto')->dailyAt($time);
+            }
+        }
     }
 
     /**

@@ -92,6 +92,7 @@ Route::group(['prefix' => 'platform'], function () {
         Route::post('/webhooks', 'Platform\WebhookController@store')->name('platform.webhooks.store');
         Route::patch('/webhooks/{webhook}/toggle', 'Platform\WebhookController@toggle')->name('platform.webhooks.toggle');
         Route::delete('/webhooks/{webhook}', 'Platform\WebhookController@destroy')->name('platform.webhooks.destroy');
+        Route::get('/usage', 'Platform\UsageAnalyticsController@index')->name('platform.usage.index');
         Route::get('/schools/at-risk-contact-gaps', 'Platform\DashboardController@atRiskContactGaps')->name('platform.schools.contact_gaps');
         Route::get('/schools/export', 'Platform\DashboardController@exportSchoolsCsv')->name('platform.schools.export');
         Route::get('/schools/export-at-risk-contacts', 'Platform\DashboardController@exportAtRiskContactsCsv')->name('platform.schools.export_at_risk_contacts');

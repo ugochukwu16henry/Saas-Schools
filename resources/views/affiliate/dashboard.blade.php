@@ -64,6 +64,49 @@
                     </div>
                 </div>
 
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <div class="card card-body border-left-primary">
+                            <div class="text-muted small">Total paid out</div>
+                            <div class="h4 mb-0">₦{{ number_format((float) $totalPaid) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="card card-body border-left-warning">
+                            <div class="text-muted small">Pending payout requests</div>
+                            <div class="h4 mb-0">₦{{ number_format((float) $pendingPayouts) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="card card-body border-left-success">
+                            <div class="text-muted small">Available balance (estimated)</div>
+                            <div class="h4 mb-0">₦{{ number_format((float) $availableForPayout) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card card-body">
+                            <div class="d-flex flex-wrap" style="gap:16px;">
+                                <div><span class="text-muted small">Referred schools:</span> <span class="font-weight-semibold">{{ number_format($schools->count()) }}</span></div>
+                                <div><span class="text-muted small">Active:</span> <span class="font-weight-semibold">{{ number_format($schoolsByStatus['active'] ?? 0) }}</span></div>
+                                <div><span class="text-muted small">Trial:</span> <span class="font-weight-semibold">{{ number_format($schoolsByStatus['trial'] ?? 0) }}</span></div>
+                                <div><span class="text-muted small">Suspended:</span> <span class="font-weight-semibold">{{ number_format($schoolsByStatus['suspended'] ?? 0) }}</span></div>
+                                <div><span class="text-muted small">Account status:</span>
+                                    @if($affiliate->status === 'approved')
+                                    <span class="badge badge-success">Approved</span>
+                                    @elseif($affiliate->status === 'pending')
+                                    <span class="badge badge-warning">Pending</span>
+                                    @else
+                                    <span class="badge badge-secondary">{{ ucfirst($affiliate->status) }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Referred schools</h5>
@@ -75,8 +118,10 @@
                                     <tr>
                                         <th>School</th>
                                         <th class="text-center">Status</th>
+                                        <th class="text-center">Subscription</th>
                                         <th class="text-center">Students</th>
                                         <th class="text-center">Billable now</th>
+                                        <th class="text-center">Joined</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -84,12 +129,64 @@
                                     <tr>
                                         <td>{{ $school->name }}</td>
                                         <td class="text-center">{{ $school->status }}</td>
+                                        <td class="text-center">
+                                            @if($school->subscription)
+                                            <span class="badge badge-{{ $school->subscription->isActive() ? 'success' : 'secondary' }}">{{ ucfirst($school->subscription->status) }}</span>
+                                            @else
+                                            <span class="badge badge-light">None</span>
+                                            @endif
+                                        </td>
                                         <td class="text-center">{{ number_format($school->students_count) }}</td>
                                         <td class="text-center">{{ number_format($school->billable_count) }}</td>
+                                        <td class="text-center">{{ optional($school->created_at)->format('M j, Y') }}</td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted p-4">No referred schools yet. Share your link with school owners.</td>
+                                        <td colspan="6" class="text-center text-muted p-4">No referred schools yet. Share your link with school owners.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Payout history</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Created</th>
+                                        <th class="text-right">Amount ₦</th>
+                                        <th>Status</th>
+                                        <th>Paid at</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($recentPayouts as $payout)
+                                    <tr>
+                                        <td>{{ optional($payout->created_at)->format('M j, Y H:i') }}</td>
+                                        <td class="text-right font-weight-semibold">{{ number_format((float) $payout->amount_ngn) }}</td>
+                                        <td>
+                                            @if($payout->status === 'paid')
+                                            <span class="badge badge-success">Paid</span>
+                                            @elseif($payout->status === 'pending')
+                                            <span class="badge badge-warning">Pending</span>
+                                            @else
+                                            <span class="badge badge-secondary">{{ ucfirst((string) $payout->status) }}</span>
+                                            @endif
+                                        </td>
+                                        <td>{{ optional($payout->paid_at)->format('M j, Y H:i') ?: '—' }}</td>
+                                        <td>{{ $payout->notes ?: '—' }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted p-4">No payouts yet. Payout requests created by platform admins will appear here.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>

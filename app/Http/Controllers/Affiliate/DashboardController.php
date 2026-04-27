@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Affiliate;
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
 use App\Models\AffiliateCommissionLedger;
+use App\Models\AffiliatePayout;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +31,7 @@ class DashboardController extends Controller
         }
 
         $schools = $affiliate->schools()
+            ->with('subscription:id,school_id,status,next_payment_date')
             ->withCount(['users as students_count' => function ($q) {
                 $q->where('user_type', 'student');
             }])
@@ -53,6 +55,30 @@ class DashboardController extends Controller
             ->where('created_at', '>=', now()->startOfMonth())
             ->sum('total_commission_ngn');
 
+        $totalPaid = AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->where('status', 'paid')
+            ->sum('amount_ngn');
+
+        $pendingPayouts = AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->where('status', 'pending')
+            ->sum('amount_ngn');
+
+        $availableForPayout = max(0, (int) $totalEarned - (int) $totalPaid - (int) $pendingPayouts);
+
+        $recentPayouts = AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->latest('id')
+            ->limit(25)
+            ->get();
+
+        $schoolsByStatus = [
+            'active' => $schools->where('status', 'active')->count(),
+            'trial' => $schools->where('status', 'trial')->count(),
+            'suspended' => $schools->where('status', 'suspended')->count(),
+        ];
+
         $recentLedger = AffiliateCommissionLedger::query()
             ->where('affiliate_id', $affiliate->id)
             ->with('school:id,name')
@@ -67,6 +93,11 @@ class DashboardController extends Controller
             'schools',
             'totalEarned',
             'mtdEarned',
+            'totalPaid',
+            'pendingPayouts',
+            'availableForPayout',
+            'recentPayouts',
+            'schoolsByStatus',
             'liveMonthlyProjection',
             'recentLedger',
             'referralUrl'
