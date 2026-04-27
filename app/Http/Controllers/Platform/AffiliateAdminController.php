@@ -28,10 +28,10 @@ class AffiliateAdminController extends Controller
 
         if ($search = trim((string) $request->get('q'))) {
             $q->where(function ($w) use ($search) {
-                $w->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('email', 'like', '%'.$search.'%')
-                    ->orWhere('phone', 'like', '%'.$search.'%')
-                    ->orWhere('code', 'like', '%'.$search.'%');
+                $w->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
             });
         }
 
@@ -118,13 +118,33 @@ class AffiliateAdminController extends Controller
         return redirect()->route('platform.affiliates.show', $affiliate)->with('status', 'Affiliate suspended.');
     }
 
+    public function destroy(Affiliate $affiliate)
+    {
+        $affiliateName = $affiliate->name;
+        $retainedSchools = 0;
+
+        DB::transaction(function () use ($affiliate, &$retainedSchools) {
+            $retainedSchools = $affiliate->schools()->count();
+
+            // Preserve referred schools while removing affiliate ownership from them.
+            $affiliate->schools()->update(['affiliate_id' => null]);
+
+            $affiliate->delete();
+        });
+
+        return redirect()->route('platform.affiliates.index')->with(
+            'status',
+            "Affiliate {$affiliateName} deleted. {$retainedSchools} referred school(s) retained."
+        );
+    }
+
     public function exportCsv(Request $request): StreamedResponse
     {
-        $filename = 'affiliates-'.now()->format('Y-m-d-His').'.csv';
+        $filename = 'affiliates-' . now()->format('Y-m-d-His') . '.csv';
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
         $query = Affiliate::query()
@@ -137,10 +157,10 @@ class AffiliateAdminController extends Controller
 
         if ($search = trim((string) $request->get('q'))) {
             $query->where(function ($w) use ($search) {
-                $w->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('email', 'like', '%'.$search.'%')
-                    ->orWhere('phone', 'like', '%'.$search.'%')
-                    ->orWhere('code', 'like', '%'.$search.'%');
+                $w->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
             });
         }
 

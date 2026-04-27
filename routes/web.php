@@ -91,6 +91,7 @@ Route::group(['prefix' => 'platform'], function () {
         Route::get('/affiliates/{affiliate}', 'Platform\AffiliateAdminController@show')->name('platform.affiliates.show');
         Route::patch('/affiliates/{affiliate}/approve', 'Platform\AffiliateAdminController@approve')->name('platform.affiliates.approve');
         Route::patch('/affiliates/{affiliate}/suspend', 'Platform\AffiliateAdminController@suspend')->name('platform.affiliates.suspend');
+        Route::delete('/affiliates/{affiliate}', 'Platform\AffiliateAdminController@destroy')->name('platform.affiliates.destroy');
         Route::get('/schools/{school}', 'Platform\DashboardController@show')->name('platform.schools.show');
         Route::patch('/schools/{school}/suspend', 'Platform\DashboardController@suspend')->name('platform.schools.suspend');
         Route::patch('/schools/{school}/activate', 'Platform\DashboardController@activate')->name('platform.schools.activate');
