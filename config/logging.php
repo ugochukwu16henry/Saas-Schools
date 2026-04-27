@@ -37,12 +37,14 @@ return [
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],
+            'tap' => [App\Logging\AddTenantContext::class],
         ],
 
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => 'debug',
+            'tap' => [App\Logging\AddTenantContext::class],
         ],
 
         'daily' => [
@@ -50,6 +52,7 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => 'debug',
             'days' => 7,
+            'tap' => [App\Logging\AddTenantContext::class],
         ],
 
         'slack' => [

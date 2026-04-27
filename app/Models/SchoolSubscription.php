@@ -14,9 +14,19 @@ class SchoolSubscription extends Model
         'trial_ends_at',
         'next_payment_date',
         'billed_students',
+        'payment_failures_count',
+        'last_payment_failed_at',
+        'last_payment_failure_reason',
+        'last_payment_reference',
+        'grace_period_ends_at',
     ];
 
-    protected $dates = ['trial_ends_at', 'next_payment_date'];
+    protected $dates = [
+        'trial_ends_at',
+        'next_payment_date',
+        'last_payment_failed_at',
+        'grace_period_ends_at',
+    ];
 
     public function school()
     {
