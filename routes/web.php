@@ -86,6 +86,9 @@ Route::group(['prefix' => 'platform'], function () {
     Route::middleware('auth:platform')->group(function () {
         Route::post('/logout', 'Platform\AuthController@logout')->name('platform.logout');
         Route::get('/dashboard', 'Platform\DashboardController@index')->name('platform.dashboard');
+        Route::get('/schools/at-risk-contact-gaps', 'Platform\DashboardController@atRiskContactGaps')->name('platform.schools.contact_gaps');
+        Route::get('/schools/export', 'Platform\DashboardController@exportSchoolsCsv')->name('platform.schools.export');
+        Route::get('/schools/export-at-risk-contacts', 'Platform\DashboardController@exportAtRiskContactsCsv')->name('platform.schools.export_at_risk_contacts');
         Route::get('/affiliates/export', 'Platform\AffiliateAdminController@exportCsv')->name('platform.affiliates.export');
         Route::get('/affiliates', 'Platform\AffiliateAdminController@index')->name('platform.affiliates.index');
         Route::get('/affiliates/{affiliate}', 'Platform\AffiliateAdminController@show')->name('platform.affiliates.show');

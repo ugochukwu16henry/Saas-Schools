@@ -192,6 +192,7 @@
 
     <div class="card-body border-top-0">
         <div class="mb-3 d-flex flex-wrap" style="gap:8px;">
+            <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['at_risk' => '1'])) }}" class="btn btn-sm {{ request('at_risk') === '1' ? 'btn-dark' : 'btn-outline-dark' }}">At Risk Only (Critical + High)</a>
             <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'critical'])) }}" class="btn btn-sm {{ request('risk') === 'critical' ? 'btn-danger' : 'btn-outline-danger' }}">Critical ({{ number_format($stats['risk_critical'] ?? 0) }})</a>
             <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'high'])) }}" class="btn btn-sm {{ request('risk') === 'high' ? 'btn-warning' : 'btn-outline-warning' }}">High ({{ number_format($stats['risk_high'] ?? 0) }})</a>
             <a href="{{ route('platform.dashboard', array_merge(request()->query(), ['risk' => 'medium'])) }}" class="btn btn-sm {{ request('risk') === 'medium' ? 'btn-info' : 'btn-outline-info' }}">Medium ({{ number_format($stats['risk_medium'] ?? 0) }})</a>
@@ -200,11 +201,14 @@
             @if(request()->filled('risk'))
             <a href="{{ route('platform.dashboard', array_filter(request()->except('risk'))) }}" class="btn btn-sm btn-light">Clear Risk Filter</a>
             @endif
+            @if(request()->boolean('at_risk'))
+            <a href="{{ route('platform.dashboard', array_filter(request()->except('at_risk'))) }}" class="btn btn-sm btn-light">Clear At Risk</a>
+            @endif
         </div>
 
         <form method="GET" action="{{ route('platform.dashboard') }}" class="mb-3">
             <div class="row">
-                <div class="col-md-4 mb-2">
+                <div class="col-md-3 mb-2">
                     <input type="text" name="q" class="form-control" placeholder="Search by name, email, phone or slug" value="{{ request('q') }}">
                 </div>
                 <div class="col-md-2 mb-2">
@@ -225,9 +229,26 @@
                         <option value="unknown" {{ request('risk') === 'unknown' ? 'selected' : '' }}>Unknown</option>
                     </select>
                 </div>
-                <div class="col-md-4 mb-2">
+                <div class="col-md-2 mb-2">
+                    <select name="sort" class="form-control">
+                        <option value="risk" {{ request('sort', 'risk') === 'risk' ? 'selected' : '' }}>Sort: Risk Priority</option>
+                        <option value="newest" {{ request('sort') === 'newest' ? 'selected' : '' }}>Sort: Newest</option>
+                        <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Sort: Oldest</option>
+                        <option value="name" {{ request('sort') === 'name' ? 'selected' : '' }}>Sort: Name A-Z</option>
+                    </select>
+                </div>
+                <div class="col-md-1 mb-2 d-flex align-items-center">
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" value="1" id="at_risk" name="at_risk" {{ request('at_risk') === '1' ? 'checked' : '' }}>
+                        <label class="form-check-label small" for="at_risk">At Risk</label>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-2">
                     <button class="btn btn-primary" type="submit">Filter</button>
                     <a href="{{ route('platform.dashboard') }}" class="btn btn-light">Reset</a>
+                    <a href="{{ route('platform.schools.export', request()->except('page')) }}" class="btn btn-outline-secondary">Export CSV</a>
+                    <a href="{{ route('platform.schools.export_at_risk_contacts', request()->except('page')) }}" class="btn btn-outline-danger">Export At-Risk Contacts</a>
+                    <a href="{{ route('platform.schools.contact_gaps', request()->except('page')) }}" class="btn btn-warning">Contact Gaps Queue</a>
                 </div>
             </div>
         </form>
