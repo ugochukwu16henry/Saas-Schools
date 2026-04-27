@@ -35,6 +35,9 @@
                     <div class="col-md-6">
                         <p><strong>MTD commission (ledger):</strong> ₦{{ number_format((float) $mtdEarned) }}</p>
                         <p><strong>All-time commission (ledger):</strong> ₦{{ number_format((float) $totalEarned) }}</p>
+                        <p><strong>Total paid out:</strong> ₦{{ number_format((float) $totalPaid) }}</p>
+                        <p><strong>Pending payouts:</strong> ₦{{ number_format((float) $pendingPayouts) }}</p>
+                        <p><strong>Available to payout:</strong> <span class="font-weight-semibold text-success">₦{{ number_format((float) $availableForPayout) }}</span></p>
                         <p><strong>Referred schools:</strong> {{ number_format($affiliate->schools_count) }}</p>
                     </div>
                 </div>
@@ -59,6 +62,58 @@
                 <p><strong>Bank:</strong> {{ $affiliate->bank_name ?: '—' }}</p>
                 <p><strong>Account name:</strong> {{ $affiliate->account_name ?: '—' }}</p>
                 <p><strong>Account number:</strong> {{ $affiliate->account_number ?: '—' }}</p>
+                <hr>
+                <p class="mb-1"><strong>Available balance:</strong> ₦{{ number_format((float) $availableForPayout) }}</p>
+                <p class="text-muted mb-0 small">Only available balance can be requested for payout.</p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Payout history</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>When</th>
+                                <th class="text-right">Amount</th>
+                                <th>Status</th>
+                                <th>Handled by</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($payouts as $p)
+                            <tr>
+                                <td>{{ $p->created_at->format('M j, Y H:i') }}</td>
+                                <td class="text-right">₦{{ number_format($p->amount_ngn) }}</td>
+                                <td>
+                                    @if($p->status === 'paid')
+                                    <span class="badge badge-success">Paid</span>
+                                    @else
+                                    <span class="badge badge-warning">Pending</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($p->status === 'paid')
+                                    {{ optional($p->paidBy)->name ?: '—' }}
+                                    @if($p->paid_at)
+                                    <div class="text-muted small">{{ $p->paid_at->format('d M Y H:i') }}</div>
+                                    @endif
+                                    @else
+                                    {{ optional($p->approvedBy)->name ?: '—' }}
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center text-muted p-3">No payouts yet.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -151,6 +206,36 @@
                 <h5 class="mb-0">Actions</h5>
             </div>
             <div class="card-body">
+                <form method="POST" action="{{ route('platform.affiliates.payouts.create', $affiliate) }}" class="mb-3">
+                    @csrf
+                    <div class="form-group">
+                        <label class="font-weight-semibold">Create payout request (₦)</label>
+                        <input type="number" name="amount_ngn" class="form-control" min="1" step="1" value="{{ old('amount_ngn') }}" required>
+                        <small class="text-muted">Available: ₦{{ number_format((float) $availableForPayout) }}</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-semibold">Notes (optional)</label>
+                        <textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" {{ $availableForPayout <= 0 ? 'disabled' : '' }}>Create Pending Payout</button>
+                </form>
+
+                @php $pendingRows = $payouts->where('status', 'pending'); @endphp
+                @if($pendingRows->count())
+                <div class="mb-3">
+                    <label class="font-weight-semibold d-block">Mark pending payouts as paid</label>
+                    @foreach($pendingRows as $pending)
+                    <form method="POST" action="{{ route('platform.affiliates.payouts.paid', [$affiliate, $pending]) }}" class="mb-2">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-outline-success btn-sm btn-block">
+                            Mark ₦{{ number_format($pending->amount_ngn) }} ({{ $pending->created_at->format('d M Y') }}) as paid
+                        </button>
+                    </form>
+                    @endforeach
+                </div>
+                @endif
+
                 @if ($affiliate->status !== 'approved' || ! $affiliate->code)
                 <form method="POST" action="{{ route('platform.affiliates.approve', $affiliate) }}" class="mb-3">
                     @csrf

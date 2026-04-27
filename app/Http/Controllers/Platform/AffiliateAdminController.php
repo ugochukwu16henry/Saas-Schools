@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
 use App\Models\AffiliateCommissionLedger;
+use App\Models\AffiliatePayout;
+use App\Services\PlatformNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -74,7 +76,118 @@ class AffiliateAdminController extends Controller
             ->where('created_at', '>=', now()->startOfMonth())
             ->sum('total_commission_ngn');
 
-        return view('platform.affiliates.show', compact('affiliate', 'schools', 'ledger', 'totalEarned', 'mtdEarned'));
+        $totalPaid = AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->where('status', 'paid')
+            ->sum('amount_ngn');
+
+        $pendingPayouts = AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->where('status', 'pending')
+            ->sum('amount_ngn');
+
+        $availableForPayout = max(0, (int) $totalEarned - (int) $totalPaid - (int) $pendingPayouts);
+
+        $payouts = AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->with(['approvedBy:id,name', 'paidBy:id,name'])
+            ->latest('id')
+            ->limit(25)
+            ->get();
+
+        return view('platform.affiliates.show', compact(
+            'affiliate',
+            'schools',
+            'ledger',
+            'totalEarned',
+            'mtdEarned',
+            'totalPaid',
+            'pendingPayouts',
+            'availableForPayout',
+            'payouts'
+        ));
+    }
+
+    public function createPayout(Request $request, Affiliate $affiliate)
+    {
+        $request->validate([
+            'amount_ngn' => ['required', 'integer', 'min:1'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $totalEarned = (int) AffiliateCommissionLedger::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->sum('total_commission_ngn');
+        $totalPaid = (int) AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->where('status', 'paid')
+            ->sum('amount_ngn');
+        $pendingPayouts = (int) AffiliatePayout::query()
+            ->where('affiliate_id', $affiliate->id)
+            ->where('status', 'pending')
+            ->sum('amount_ngn');
+
+        $available = max(0, $totalEarned - $totalPaid - $pendingPayouts);
+        $amount = (int) $request->integer('amount_ngn');
+
+        if ($amount > $available) {
+            return back()->withErrors([
+                'amount_ngn' => 'Amount exceeds available payout balance (₦' . number_format($available) . ').',
+            ])->withInput();
+        }
+
+        $payout = AffiliatePayout::create([
+            'affiliate_id' => $affiliate->id,
+            'approved_by' => Auth::guard('platform')->id(),
+            'amount_ngn' => $amount,
+            'status' => 'pending',
+            'notes' => $request->input('notes'),
+        ]);
+
+        app(PlatformNotificationService::class)->push(
+            'affiliate_payout_pending',
+            'Affiliate Payout Requested',
+            'Pending payout of ₦' . number_format($payout->amount_ngn) . ' created for ' . $affiliate->name . '.',
+            null,
+            [
+                'affiliate_id' => $affiliate->id,
+                'payout_id' => $payout->id,
+                'amount_ngn' => $payout->amount_ngn,
+            ]
+        );
+
+        return back()->with('status', 'Payout request created and marked as pending.');
+    }
+
+    public function markPayoutPaid(Affiliate $affiliate, AffiliatePayout $payout)
+    {
+        if ((int) $payout->affiliate_id !== (int) $affiliate->id) {
+            abort(404);
+        }
+
+        if ($payout->status === 'paid') {
+            return back()->with('status', 'Payout is already marked as paid.');
+        }
+
+        $payout->update([
+            'status' => 'paid',
+            'paid_by' => Auth::guard('platform')->id(),
+            'paid_at' => now(),
+        ]);
+
+        app(PlatformNotificationService::class)->push(
+            'affiliate_payout_paid',
+            'Affiliate Payout Marked Paid',
+            'Payout of ₦' . number_format($payout->amount_ngn) . ' marked paid for ' . $affiliate->name . '.',
+            null,
+            [
+                'affiliate_id' => $affiliate->id,
+                'payout_id' => $payout->id,
+                'amount_ngn' => $payout->amount_ngn,
+            ]
+        );
+
+        return back()->with('status', 'Payout marked as paid.');
     }
 
     public function approve(Request $request, Affiliate $affiliate)

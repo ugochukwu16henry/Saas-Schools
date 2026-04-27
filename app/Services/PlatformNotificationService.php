@@ -30,6 +30,8 @@ class PlatformNotificationService
             'payment_failure' => 'billing.payment_failure',
             'billing_suspension' => 'billing.school_suspended',
             'plan_override_updated' => 'school.plan_override_updated',
+            'affiliate_payout_pending' => 'affiliate.payout_pending',
+            'affiliate_payout_paid' => 'affiliate.payout_paid',
         ];
 
         return $map[$type] ?? 'platform.notification';

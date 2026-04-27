@@ -56,6 +56,11 @@ class Affiliate extends Authenticatable
         return $this->hasMany(AffiliateCommissionLedger::class, 'affiliate_id');
     }
 
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(AffiliatePayout::class, 'affiliate_id');
+    }
+
     public function isApproved(): bool
     {
         return $this->status === 'approved' && $this->code !== null;

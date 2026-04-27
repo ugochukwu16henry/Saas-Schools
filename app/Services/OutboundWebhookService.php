@@ -27,6 +27,7 @@ class OutboundWebhookService
         ];
 
         foreach ($endpoints as $endpoint) {
+            /** @var PlatformWebhookEndpoint $endpoint */
             if (! $endpoint->supportsEvent($event)) {
                 continue;
             }
