@@ -370,21 +370,49 @@ class StudentBulkController extends Controller
 
     /**
      * Read upload only from the files bag so a stray string "import_file" in POST/session cannot break Request::file().
+     *
+     * Fallback: in containerised/proxied environments (e.g. Railway) is_uploaded_file() can return false
+     * on the PHP tmp path even though $_FILES shows error=0 and the file exists on disk.  Symfony's FileBag
+     * silently drops those entries.  When that happens we construct the UploadedFile directly from $_FILES
+     * with $test=true to bypass the is_uploaded_file() check — safe because we already verified error===0
+     * and the file path exists.
      */
     protected function resolveImportFile(Request $request): ?UploadedFile
     {
-        if (! $request->files->has('import_file')) {
-            return null;
-        }
-        $file = $request->files->get('import_file');
-        if (is_array($file)) {
-            $file = $file[0] ?? null;
-        }
-        if (! $file instanceof UploadedFile) {
-            return null;
+        if ($request->files->has('import_file')) {
+            $file = $request->files->get('import_file');
+            if (is_array($file)) {
+                $file = $file[0] ?? null;
+            }
+            if ($file instanceof UploadedFile) {
+                return $file;
+            }
         }
 
-        return $file;
+        // FileBag fallback for containerised environments where is_uploaded_file() fails.
+        if (
+            isset($_FILES['import_file']['error']) &&
+            (int) $_FILES['import_file']['error'] === UPLOAD_ERR_OK &&
+            isset($_FILES['import_file']['tmp_name']) &&
+            (string) $_FILES['import_file']['tmp_name'] !== '' &&
+            file_exists((string) $_FILES['import_file']['tmp_name'])
+        ) {
+            Log::info('BulkImport: FileBag miss — constructing UploadedFile from $_FILES directly', [
+                'tmp_name' => $_FILES['import_file']['tmp_name'],
+                'name'     => $_FILES['import_file']['name'] ?? null,
+                'size'     => $_FILES['import_file']['size'] ?? null,
+            ]);
+
+            return new UploadedFile(
+                (string) $_FILES['import_file']['tmp_name'],
+                (string) ($_FILES['import_file']['name'] ?? 'upload'),
+                $_FILES['import_file']['type'] ?? null,
+                UPLOAD_ERR_OK,
+                true  // $test=true bypasses is_uploaded_file() — intentional, see docblock
+            );
+        }
+
+        return null;
     }
 
     /**
