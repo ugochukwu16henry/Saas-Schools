@@ -17,6 +17,8 @@ return [
         // Platform-side capabilities
         'platform.billing_plans.manage' => ['platform_admin'],
         'platform.schools.manage' => ['platform_admin'],
+        'platform.webhooks.manage' => ['platform_admin'],
+        'platform.affiliates.manage' => ['platform_admin'],
 
         // School-side capabilities
         'school.settings.manage' => ['super_admin', 'admin'],
@@ -30,5 +32,9 @@ return [
         'school.timetables.manage' => ['super_admin', 'admin'],
         'school.pins.manage' => ['super_admin', 'admin'],
         'school.promotions.manage' => ['super_admin', 'admin'],
+        'school.classes.manage' => ['super_admin', 'admin'],
+        'school.sections.manage' => ['super_admin', 'admin'],
+        'school.grades.manage' => ['super_admin', 'admin'],
+        'school.dorms.manage' => ['super_admin', 'admin'],
     ],
 ];

@@ -14,8 +14,9 @@ class DormController extends Controller
 
     public function __construct(DormRepo $dorm)
     {
-        $this->middleware('teamSA', ['except' => ['destroy',] ]);
-        $this->middleware('super_admin', ['only' => ['destroy',] ]);
+        $this->middleware('teamSA', ['except' => ['destroy',]]);
+        $this->middleware('super_admin', ['only' => ['destroy',]]);
+        $this->middleware('ability:school.dorms.manage', ['only' => ['index', 'store', 'edit', 'update', 'destroy']]);
 
         $this->dorm = $dorm;
     }

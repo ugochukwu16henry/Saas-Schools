@@ -15,8 +15,9 @@ class SectionController extends Controller
 
     public function __construct(MyClassRepo $my_class, UserRepo $user)
     {
-        $this->middleware('teamSA', ['except' => ['destroy',] ]);
-        $this->middleware('super_admin', ['only' => ['destroy',] ]);
+        $this->middleware('teamSA', ['except' => ['destroy',]]);
+        $this->middleware('super_admin', ['only' => ['destroy',]]);
+        $this->middleware('ability:school.sections.manage', ['only' => ['index', 'store', 'edit', 'update', 'destroy']]);
 
         $this->my_class = $my_class;
         $this->user = $user;
@@ -44,7 +45,7 @@ class SectionController extends Controller
         $d['s'] = $s = $this->my_class->findSection($id);
         $d['teachers'] = $this->user->getUserByType('teacher');
 
-        return is_null($s) ? Qs::goWithDanger('sections.index') :view('pages.support_team.sections.edit', $d);
+        return is_null($s) ? Qs::goWithDanger('sections.index') : view('pages.support_team.sections.edit', $d);
     }
 
     public function update(SectionUpdate $req, $id)
@@ -57,12 +58,11 @@ class SectionController extends Controller
 
     public function destroy($id)
     {
-        if($this->my_class->isActiveSection($id)){
+        if ($this->my_class->isActiveSection($id)) {
             return back()->with('pop_warning', 'Every class must have a default section, You Cannot Delete It');
         }
 
         $this->my_class->deleteSection($id);
         return back()->with('flash_success', __('msg.del_ok'));
     }
-
 }

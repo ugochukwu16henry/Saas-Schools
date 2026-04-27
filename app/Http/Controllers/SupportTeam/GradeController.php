@@ -17,14 +17,15 @@ class GradeController extends Controller
         $this->exam = $exam;
         $this->my_class = $my_class;
 
-        $this->middleware('teamSA', ['except' => ['destroy',] ]);
-        $this->middleware('super_admin', ['only' => ['destroy',] ]);
+        $this->middleware('teamSA', ['except' => ['destroy',]]);
+        $this->middleware('super_admin', ['only' => ['destroy',]]);
+        $this->middleware('ability:school.grades.manage', ['only' => ['index', 'store', 'edit', 'update', 'destroy']]);
     }
 
     public function index()
     {
-         $d['grades'] = $this->exam->allGrades();
-         $d['class_types'] = $this->my_class->getTypes();
+        $d['grades'] = $this->exam->allGrades();
+        $d['class_types'] = $this->my_class->getTypes();
         return view('pages.support_team.grades.index', $d);
     }
 

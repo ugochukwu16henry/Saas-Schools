@@ -15,8 +15,9 @@ class MyClassController extends Controller
 
     public function __construct(MyClassRepo $my_class, UserRepo $user)
     {
-        $this->middleware('teamSA', ['except' => ['destroy',] ]);
-        $this->middleware('super_admin', ['only' => ['destroy',] ]);
+        $this->middleware('teamSA', ['except' => ['destroy',]]);
+        $this->middleware('super_admin', ['only' => ['destroy',]]);
+        $this->middleware('ability:school.classes.manage', ['only' => ['index', 'store', 'edit', 'update', 'destroy']]);
 
         $this->my_class = $my_class;
         $this->user = $user;
@@ -36,7 +37,8 @@ class MyClassController extends Controller
         $mc = $this->my_class->create($data);
 
         // Create Default Section
-        $s =['my_class_id' => $mc->id,
+        $s = [
+            'my_class_id' => $mc->id,
             'name' => 'A',
             'active' => 1,
             'teacher_id' => NULL,
@@ -51,7 +53,7 @@ class MyClassController extends Controller
     {
         $d['c'] = $c = $this->my_class->find($id);
 
-        return is_null($c) ? Qs::goWithDanger('classes.index') : view('pages.support_team.classes.edit', $d) ;
+        return is_null($c) ? Qs::goWithDanger('classes.index') : view('pages.support_team.classes.edit', $d);
     }
 
     public function update(ClassUpdate $req, $id)
@@ -67,5 +69,4 @@ class MyClassController extends Controller
         $this->my_class->delete($id);
         return back()->with('flash_success', __('msg.del_ok'));
     }
-
 }
