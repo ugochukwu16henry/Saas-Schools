@@ -95,6 +95,8 @@ Route::group(['prefix' => 'platform'], function () {
         Route::patch('/affiliates/{affiliate}/approve', 'Platform\AffiliateAdminController@approve')->name('platform.affiliates.approve');
         Route::patch('/affiliates/{affiliate}/suspend', 'Platform\AffiliateAdminController@suspend')->name('platform.affiliates.suspend');
         Route::delete('/affiliates/{affiliate}', 'Platform\AffiliateAdminController@destroy')->name('platform.affiliates.destroy');
+        Route::get('/revenue', 'Platform\RevenueController@index')->name('platform.revenue');
+        Route::patch('/schools/{school}/plan', 'Platform\\DashboardController@updatePlan')->name('platform.schools.update_plan');
         Route::get('/schools/{school}', 'Platform\DashboardController@show')->name('platform.schools.show');
         Route::patch('/schools/{school}/suspend', 'Platform\DashboardController@suspend')->name('platform.schools.suspend');
         Route::patch('/schools/{school}/activate', 'Platform\DashboardController@activate')->name('platform.schools.activate');
@@ -106,6 +108,7 @@ Route::group(['prefix' => 'platform'], function () {
 Route::post('/paystack/webhook', 'Billing\PaystackController@webhook')->name('paystack.webhook');
 Route::group(['middleware' => ['auth', 'tenant']], function () {
     Route::get('/billing/prompt',      'Billing\PaystackController@prompt')->name('billing.prompt');
+    Route::get('/billing/status',      'Billing\PaystackController@status')->name('billing.status');
     Route::get('/billing/initialize',  'Billing\PaystackController@initialize')->name('billing.initialize');
     Route::get('/billing/callback',    'Billing\PaystackController@callback')->name('billing.callback');
 });

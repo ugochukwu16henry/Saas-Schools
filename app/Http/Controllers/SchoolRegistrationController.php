@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\School;
 use App\Models\Setting;
+use App\Notifications\SchoolWelcomeNotification;
 use App\Services\AffiliateReferralService;
 use App\User;
 use Illuminate\Http\Request;
@@ -34,12 +35,15 @@ class SchoolRegistrationController extends Controller
             'password'    => 'required|min:8|confirmed',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $newUser = null;
+        $newSchool = null;
+
+        DB::transaction(function () use ($request, &$newUser, &$newSchool) {
             $referral = trim((string) ($request->input('ref') ?: $request->session()->get('school_registration_ref')));
             $affiliateId = app(AffiliateReferralService::class)->resolveAffiliateId($referral !== '' ? $referral : null);
 
             // Create the school record
-            $school = School::create([
+            $newSchool = $school = School::create([
                 'name'               => $request->school_name,
                 'slug'               => $this->uniqueSlug($request->school_name),
                 'email'              => $request->email,
@@ -82,7 +86,7 @@ class SchoolRegistrationController extends Controller
             }
 
             // Create the school owner as super_admin
-            User::create([
+            $newUser = User::create([
                 'name'      => $request->your_name,
                 'email'     => $request->email,
                 'username'  => $this->uniqueUsername($request->your_name),
@@ -95,6 +99,10 @@ class SchoolRegistrationController extends Controller
         });
 
         $request->session()->forget('school_registration_ref');
+
+        if ($newUser && $newSchool) {
+            $newUser->notify(new SchoolWelcomeNotification($newSchool));
+        }
 
         return redirect()->route('login')
             ->with('status', 'School registered successfully! Login to get started. Your first 50 students are free.');

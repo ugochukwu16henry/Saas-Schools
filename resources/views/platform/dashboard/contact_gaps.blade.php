@@ -62,6 +62,10 @@
                     $failureCount = (int) ($sub->payment_failures_count ?? 0);
                     $graceEndsAt = optional($sub)->grace_period_ends_at;
                     $isGraceExpired = $graceEndsAt ? $graceEndsAt->lte(now()) : false;
+                    $hasEmail = filled($school->email);
+                    $hasPhone = filled($school->phone);
+                    $isUnreachable = !$hasEmail && !$hasPhone;
+                    $smsPhone = preg_replace('/\s+/', '', (string) $school->phone);
 
                     if (!$sub) {
                     $riskLabel = 'Unknown';
@@ -80,18 +84,21 @@
                     $riskClass = 'success';
                     }
                     @endphp
-                    <tr>
+                    <tr class="{{ $isUnreachable ? 'table-danger' : '' }}">
                         <td>
                             <div class="font-weight-semibold">{{ $school->name }}</div>
                             <div class="text-muted small">{{ $school->slug }}</div>
                             <div class="text-muted small">Status: {{ ucfirst($school->status) }}</div>
+                            @if($isUnreachable)
+                            <div class="text-danger small font-weight-semibold">Unreachable: no email or phone</div>
+                            @endif
                         </td>
                         <td>
                             <span class="badge badge-{{ $riskClass }}">{{ $riskLabel }}</span>
                         </td>
                         <td>
-                            <div>Email: {{ $school->email ?: 'MISSING' }}</div>
-                            <div>Phone: {{ $school->phone ?: 'MISSING' }}</div>
+                            <div>Email: {{ $hasEmail ? $school->email : 'MISSING' }}</div>
+                            <div>Phone: {{ $hasPhone ? $school->phone : 'MISSING' }}</div>
                         </td>
                         <td>
                             @if($sub)
@@ -104,7 +111,13 @@
                         <td>{{ optional($sub?->grace_period_ends_at)->format('d M Y, H:i') ?: '-' }}</td>
                         <td>{{ optional($school->created_at)->format('d M Y') }}</td>
                         <td class="text-center">
-                            <a class="btn btn-sm btn-info" href="{{ route('platform.schools.show', $school) }}">View School</a>
+                            @if($hasEmail)
+                            <a class="btn btn-sm btn-outline-primary mb-1" href="mailto:{{ $school->email }}?subject=Billing%20Follow-up">Email</a>
+                            @endif
+                            @if($hasPhone)
+                            <a class="btn btn-sm btn-outline-success mb-1" href="sms:{{ $smsPhone }}?body=Hello%2C%20your%20school%20account%20requires%20billing%20attention.">SMS</a>
+                            @endif
+                            <a class="btn btn-sm btn-info mb-1" href="{{ route('platform.schools.show', $school) }}">View School</a>
                         </td>
                     </tr>
                     @empty

@@ -449,6 +449,17 @@ class DashboardController extends Controller
         return back()->with('status', "{$school->name} has been activated.");
     }
 
+    public function updatePlan(Request $request, School $school)
+    {
+        $request->validate([
+            'free_student_limit' => ['required', 'integer', 'min:0', 'max:100000'],
+        ]);
+
+        $school->update(['free_student_limit' => $request->integer('free_student_limit')]);
+
+        return back()->with('status', "Free student limit updated to {$school->free_student_limit} for {$school->name}.");
+    }
+
     public function destroy(School $school)
     {
         DB::transaction(function () use ($school) {

@@ -313,6 +313,26 @@ class PaystackController extends Controller
         return max(1, (int) config('paystack.payment_failure_grace_days', 7));
     }
 
+    /**
+     * School admin billing self-service page.
+     */
+    public function status()
+    {
+        $school       = app('currentSchool');
+        $sub          = $school->subscription;
+        $studentCount = $school->users()->where('user_type', 'student')->count();
+        $billing      = $this->buildBillingSummary($school, $studentCount);
+
+        return view('billing.status', array_merge(
+            compact('school', 'studentCount', 'sub'),
+            $billing,
+            [
+                'monthlyRate' => self::MONTHLY_RATE,
+                'oneTimeRate' => self::ONE_TIME_ADD_RATE,
+            ]
+        ));
+    }
+
     private function buildBillingSummary(School $school, int $studentCount): array
     {
         $billableCount = max(0, $studentCount - $school->free_student_limit);

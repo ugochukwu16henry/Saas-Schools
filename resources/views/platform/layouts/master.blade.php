@@ -13,62 +13,66 @@
 </head>
 
 <body>
-<div class="navbar navbar-expand-md navbar-dark" style="background:#1e293b;">
-    <div class="navbar-brand wmin-200">
-        <a href="{{ route('platform.dashboard') }}" class="d-inline-flex align-items-center text-white" style="gap:8px; text-decoration:none;">
-            <img src="{{ asset('global_assets/images/riseflow-logo.png') }}" alt="RiseFlow" style="height:32px; width:auto; object-fit:contain;">
-            <span class="font-weight-semibold">RiseFlow Platform</span>
-        </a>
+    <div class="navbar navbar-expand-md navbar-dark" style="background:#1e293b;">
+        <div class="navbar-brand wmin-200">
+            <a href="{{ route('platform.dashboard') }}" class="d-inline-flex align-items-center text-white" style="gap:8px; text-decoration:none;">
+                <img src="{{ asset('global_assets/images/riseflow-logo.png') }}" alt="RiseFlow" style="height:32px; width:auto; object-fit:contain;">
+                <span class="font-weight-semibold">RiseFlow Platform</span>
+            </a>
+        </div>
+
+        <div class="d-md-none">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#platform-navbar">
+                <i class="icon-tree5"></i>
+            </button>
+        </div>
+
+        <div class="collapse navbar-collapse" id="platform-navbar">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a href="{{ route('platform.dashboard') }}" class="nav-link">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('platform.revenue') }}" class="nav-link">Revenue</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('platform.affiliates.index') }}" class="nav-link">Affiliates</a>
+                </li>
+                <li class="nav-item">
+                    <form method="POST" action="{{ route('platform.logout') }}">
+                        @csrf
+                        <button class="btn btn-sm btn-light" type="submit">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
     </div>
 
-    <div class="d-md-none">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#platform-navbar">
-            <i class="icon-tree5"></i>
-        </button>
-    </div>
-
-    <div class="collapse navbar-collapse" id="platform-navbar">
-        <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-                <a href="{{ route('platform.dashboard') }}" class="nav-link">Dashboard</a>
-            </li>
-            <li class="nav-item">
-                <a href="{{ route('platform.affiliates.index') }}" class="nav-link">Affiliates</a>
-            </li>
-            <li class="nav-item">
-                <form method="POST" action="{{ route('platform.logout') }}">
-                    @csrf
-                    <button class="btn btn-sm btn-light" type="submit">Logout</button>
-                </form>
-            </li>
-        </ul>
-    </div>
-</div>
-
-<div class="page-content">
-    <div class="content-wrapper">
-        <div class="content pt-4">
-            @if (session('status'))
+    <div class="page-content">
+        <div class="content-wrapper">
+            <div class="content pt-4">
+                @if (session('status'))
                 <div class="alert alert-success alert-dismissible">
                     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                     {{ session('status') }}
                 </div>
-            @endif
+                @endif
 
-            @if($errors->any())
+                @if($errors->any())
                 <div class="alert alert-danger alert-dismissible">
                     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                     @foreach($errors->all() as $error)
-                        <div>{{ $error }}</div>
+                    <div>{{ $error }}</div>
                     @endforeach
                 </div>
-            @endif
+                @endif
 
-            @yield('content')
+                @yield('content')
+            </div>
         </div>
     </div>
-</div>
 
-@include('partials.inc_bottom')
+    @include('partials.inc_bottom')
 </body>
+
 </html>

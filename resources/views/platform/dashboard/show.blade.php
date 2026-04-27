@@ -189,6 +189,44 @@
 
         <hr>
 
+        {{-- ── Plan Override ──────────────────────────────────────────────── --}}
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="card border">
+                    <div class="card-header bg-light py-2">
+                        <h6 class="card-title mb-0">Plan Override — Free Student Limit</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Students up to this limit are free; any above are billed at ₦100/student/month.
+                            Default is 0 (all students billed).
+                        </p>
+                        <form method="POST" action="{{ route('platform.schools.update_plan', $school) }}" class="form-inline">
+                            @csrf
+                            @method('PATCH')
+                            <div class="input-group" style="max-width:260px;">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">Free Students</span>
+                                </div>
+                                <input type="number" name="free_student_limit"
+                                    class="form-control @error('free_student_limit') is-invalid @enderror"
+                                    value="{{ old('free_student_limit', $school->free_student_limit) }}"
+                                    min="0" max="100000" required>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                </div>
+                            </div>
+                            @error('free_student_limit')
+                            <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
+                            @enderror
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
         <div class="d-flex flex-wrap" style="gap:8px;">
             @if($school->status === 'suspended')
             <form method="POST" action="{{ route('platform.schools.activate', $school) }}">
