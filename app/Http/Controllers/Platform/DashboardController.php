@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
 use App\Models\School;
 use App\Models\SchoolSubscription;
+use App\Services\PlatformNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -456,6 +457,7 @@ class DashboardController extends Controller
         ]);
 
         $school->update(['free_student_limit' => $request->integer('free_student_limit')]);
+        app(PlatformNotificationService::class)->planOverrideUpdated($school, (int) $school->free_student_limit);
 
         return back()->with('status', "Free student limit updated to {$school->free_student_limit} for {$school->name}.");
     }

@@ -86,6 +86,8 @@ Route::group(['prefix' => 'platform'], function () {
     Route::middleware('auth:platform')->group(function () {
         Route::post('/logout', 'Platform\AuthController@logout')->name('platform.logout');
         Route::get('/dashboard', 'Platform\DashboardController@index')->name('platform.dashboard');
+        Route::get('/notifications', 'Platform\NotificationController@index')->name('platform.notifications.index');
+        Route::patch('/notifications/{notification}/read', 'Platform\NotificationController@markRead')->name('platform.notifications.read');
         Route::get('/schools/at-risk-contact-gaps', 'Platform\DashboardController@atRiskContactGaps')->name('platform.schools.contact_gaps');
         Route::get('/schools/export', 'Platform\DashboardController@exportSchoolsCsv')->name('platform.schools.export');
         Route::get('/schools/export-at-risk-contacts', 'Platform\DashboardController@exportAtRiskContactsCsv')->name('platform.schools.export_at_risk_contacts');

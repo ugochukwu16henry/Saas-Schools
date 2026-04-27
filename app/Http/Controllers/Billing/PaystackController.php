@@ -7,6 +7,7 @@ use App\Models\School;
 use App\Models\SchoolSubscription;
 use App\Services\AffiliateCommissionService;
 use App\Services\BillingDunningNotificationService;
+use App\Services\PlatformNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -245,11 +246,13 @@ class PaystackController extends Controller
 
             if (! $wasAlreadySuspended) {
                 $this->dunningNotifier->sendSuspensionNotice($school, $sub->fill($updates));
+                app(PlatformNotificationService::class)->schoolSuspendedForBilling($school, $failureCount);
             }
         } else {
             $updates['grace_period_ends_at'] = now()->addDays($this->paymentFailureGraceDays());
 
             $this->dunningNotifier->sendPaymentFailureWarning($school, $sub->fill($updates));
+            app(PlatformNotificationService::class)->paymentFailure($school, $failureCount, $failureReason);
         }
 
         $sub->update($updates);
@@ -280,6 +283,10 @@ class PaystackController extends Controller
 
         if ($sub && ! $wasAlreadySuspended) {
             $this->dunningNotifier->sendSuspensionNotice($school, $sub);
+            app(PlatformNotificationService::class)->schoolSuspendedForBilling(
+                $school,
+                (int) ($sub->payment_failures_count ?? 0)
+            );
         }
 
         Log::info("Paystack subscription.disable: school {$school->id}");

@@ -6,6 +6,7 @@ use App\Models\School;
 use App\Models\Setting;
 use App\Notifications\SchoolWelcomeNotification;
 use App\Services\AffiliateReferralService;
+use App\Services\PlatformNotificationService;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -102,6 +103,7 @@ class SchoolRegistrationController extends Controller
 
         if ($newUser && $newSchool) {
             $newUser->notify(new SchoolWelcomeNotification($newSchool));
+            app(PlatformNotificationService::class)->schoolRegistered($newSchool, $newUser);
         }
 
         return redirect()->route('login')
