@@ -26,6 +26,9 @@ class Kernel extends ConsoleKernel
     {
         // Enforce payment-failure grace windows and auto-suspend delinquent schools.
         $schedule->command('billing:enforce-dunning')->hourly();
+
+        // Expire overdue trials and suspend schools that never converted.
+        $schedule->command('billing:expire-trials')->hourly();
     }
 
     /**

@@ -19,6 +19,8 @@ class SchoolSubscription extends Model
         'last_payment_failure_reason',
         'last_payment_reference',
         'grace_period_ends_at',
+        'trial_warning_7d_sent_at',
+        'trial_warning_1d_sent_at',
     ];
 
     protected $dates = [
@@ -26,6 +28,8 @@ class SchoolSubscription extends Model
         'next_payment_date',
         'last_payment_failed_at',
         'grace_period_ends_at',
+        'trial_warning_7d_sent_at',
+        'trial_warning_1d_sent_at',
     ];
 
     public function school()

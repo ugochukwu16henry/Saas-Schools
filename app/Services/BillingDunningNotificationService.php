@@ -6,6 +6,7 @@ use App\Models\School;
 use App\Models\SchoolSubscription;
 use App\Notifications\BillingAccountSuspendedNotification;
 use App\Notifications\BillingPaymentFailureWarningNotification;
+use App\Notifications\BillingTrialExpiringNotification;
 use App\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -41,6 +42,23 @@ class BillingDunningNotificationService
         Log::warning('Billing suspension notifications sent.', [
             'school_id' => $school->id,
             'subscription_id' => $subscription->id,
+            'recipients' => $recipients->count(),
+        ]);
+    }
+
+    public function sendTrialExpiringWarning(School $school, SchoolSubscription $subscription, int $daysRemaining): void
+    {
+        $recipients = $this->schoolBillingRecipients($school->id);
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        Notification::send($recipients, new BillingTrialExpiringNotification($school, $subscription, $daysRemaining));
+
+        Log::info('Trial expiry warning notifications sent.', [
+            'school_id' => $school->id,
+            'subscription_id' => $subscription->id,
+            'days_remaining' => $daysRemaining,
             'recipients' => $recipients->count(),
         ]);
     }
