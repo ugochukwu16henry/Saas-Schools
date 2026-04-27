@@ -52,9 +52,17 @@ class AbilityActorMatrixTest extends TestCase
 
         Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
         Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(401);
+        Auth::shouldReceive('check')->never();
+        Auth::shouldReceive('user')->never();
 
         $middleware = new CheckAbility();
         $request = Request::create('/platform/webhooks', 'POST');
+
+        $route = \Mockery::mock();
+        $route->shouldReceive('gatherMiddleware')->once()->andReturn(['web', 'auth:platform', 'ability:platform.webhooks.manage']);
+        $request->setRouteResolver(function () use ($route) {
+            return $route;
+        });
 
         $response = $middleware->handle($request, function () {
             return response('ok', 200);
@@ -83,14 +91,6 @@ class AbilityActorMatrixTest extends TestCase
 
     private function mockSchoolActor(string $userType, int $userId): void
     {
-        $platformGuard = \Mockery::mock();
-        $affiliateGuard = \Mockery::mock();
-
-        $platformGuard->shouldReceive('check')->once()->andReturn(false);
-        $affiliateGuard->shouldReceive('check')->once()->andReturn(false);
-
-        Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
-        Auth::shouldReceive('guard')->with('affiliate')->once()->andReturn($affiliateGuard);
         Auth::shouldReceive('check')->once()->andReturn(true);
         Auth::shouldReceive('user')->once()->andReturn((object) ['user_type' => $userType]);
         Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn($userId);

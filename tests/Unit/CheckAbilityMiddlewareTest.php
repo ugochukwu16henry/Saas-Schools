@@ -14,14 +14,6 @@ class CheckAbilityMiddlewareTest extends TestCase
     {
         config(['permissions.abilities.school.marks.manage' => ['super_admin', 'teacher']]);
 
-        $platformGuard = \Mockery::mock();
-        $affiliateGuard = \Mockery::mock();
-
-        $platformGuard->shouldReceive('check')->once()->andReturn(false);
-        $affiliateGuard->shouldReceive('check')->once()->andReturn(false);
-
-        Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
-        Auth::shouldReceive('guard')->with('affiliate')->once()->andReturn($affiliateGuard);
         Auth::shouldReceive('check')->once()->andReturn(true);
         Auth::shouldReceive('user')->once()->andReturn((object) ['user_type' => 'teacher']);
         Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(12);
@@ -40,14 +32,6 @@ class CheckAbilityMiddlewareTest extends TestCase
     {
         config(['permissions.abilities.school.settings.manage' => ['super_admin', 'admin']]);
 
-        $platformGuard = \Mockery::mock();
-        $affiliateGuard = \Mockery::mock();
-
-        $platformGuard->shouldReceive('check')->once()->andReturn(false);
-        $affiliateGuard->shouldReceive('check')->once()->andReturn(false);
-
-        Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
-        Auth::shouldReceive('guard')->with('affiliate')->once()->andReturn($affiliateGuard);
         Auth::shouldReceive('check')->once()->andReturn(true);
         Auth::shouldReceive('user')->once()->andReturn((object) ['user_type' => 'teacher']);
         Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(45);
@@ -102,9 +86,70 @@ class CheckAbilityMiddlewareTest extends TestCase
 
         Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
         Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(null);
+        Auth::shouldReceive('check')->never();
+        Auth::shouldReceive('user')->never();
 
         $middleware = new CheckAbility();
         $request = Request::create('/platform/schools/10/suspend', 'PATCH');
+
+        $route = \Mockery::mock();
+        $route->shouldReceive('gatherMiddleware')->once()->andReturn(['web', 'auth:platform', 'ability:platform.schools.manage']);
+        $request->setRouteResolver(function () use ($route) {
+            return $route;
+        });
+
+        $response = $middleware->handle($request, function () {
+            return response('ok', 200);
+        }, 'platform.schools.manage');
+
+        $this->assertSame(200, $response->status());
+    }
+
+    public function testSchoolRoutePrefersWebActorEvenWhenPlatformSessionExists()
+    {
+        config(['permissions.abilities.school.settings.manage' => ['super_admin', 'admin']]);
+
+        Auth::shouldReceive('check')->once()->andReturn(true);
+        Auth::shouldReceive('user')->once()->andReturn((object) ['user_type' => 'super_admin']);
+        Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(501);
+
+        $middleware = new CheckAbility();
+        $request = Request::create('/super_admin/settings', 'PUT');
+
+        $route = \Mockery::mock();
+        $route->shouldReceive('gatherMiddleware')->once()->andReturn(['web', 'super_admin', 'ability:school.settings.manage']);
+        $request->setRouteResolver(function () use ($route) {
+            return $route;
+        });
+
+        $response = $middleware->handle($request, function () {
+            return response('ok', 200);
+        }, 'school.settings.manage');
+
+        $this->assertSame(200, $response->status());
+    }
+
+    public function testPlatformRouteUsesPlatformActorWhenGuardHintPresent()
+    {
+        config(['permissions.abilities.platform.schools.manage' => ['platform_admin']]);
+
+        $platformGuard = \Mockery::mock();
+
+        $platformGuard->shouldReceive('check')->once()->andReturn(true);
+
+        Auth::shouldReceive('guard')->with('platform')->once()->andReturn($platformGuard);
+        Auth::shouldReceive('id')->zeroOrMoreTimes()->andReturn(601);
+        Auth::shouldReceive('check')->never();
+        Auth::shouldReceive('user')->never();
+
+        $middleware = new CheckAbility();
+        $request = Request::create('/platform/schools/7/suspend', 'PATCH');
+
+        $route = \Mockery::mock();
+        $route->shouldReceive('gatherMiddleware')->once()->andReturn(['web', 'auth:platform', 'ability:platform.schools.manage']);
+        $request->setRouteResolver(function () use ($route) {
+            return $route;
+        });
 
         $response = $middleware->handle($request, function () {
             return response('ok', 200);

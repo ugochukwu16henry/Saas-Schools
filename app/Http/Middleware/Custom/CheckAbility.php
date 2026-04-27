@@ -13,7 +13,7 @@ class CheckAbility
      */
     public function handle($request, Closure $next, string $ability)
     {
-        $actor = $this->resolveActorType();
+        $actor = $this->resolveActorType($request);
         if ($actor === null) {
             Log::warning('Ability check failed: unauthenticated actor', [
                 'ability' => $ability,
@@ -43,8 +43,24 @@ class CheckAbility
         abort(403, 'You are not allowed to perform this action.');
     }
 
-    private function resolveActorType(): ?string
+    private function resolveActorType($request): ?string
     {
+        $guardHint = $this->resolveGuardHint($request);
+
+        if ($guardHint === 'platform') {
+            return Auth::guard('platform')->check() ? 'platform_admin' : null;
+        }
+
+        if ($guardHint === 'affiliate') {
+            return Auth::guard('affiliate')->check() ? 'affiliate' : null;
+        }
+
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            return (string) ($user->user_type ?? 'user');
+        }
+
         if (Auth::guard('platform')->check()) {
             return 'platform_admin';
         }
@@ -53,10 +69,24 @@ class CheckAbility
             return 'affiliate';
         }
 
-        if (Auth::check()) {
-            $user = Auth::user();
+        return null;
+    }
 
-            return (string) ($user->user_type ?? 'user');
+    private function resolveGuardHint($request): ?string
+    {
+        $route = $request->route();
+        if (!$route) {
+            return null;
+        }
+
+        foreach ((array) $route->gatherMiddleware() as $middleware) {
+            if (strpos($middleware, 'auth:platform') === 0) {
+                return 'platform';
+            }
+
+            if (strpos($middleware, 'auth:affiliate') === 0) {
+                return 'affiliate';
+            }
         }
 
         return null;
