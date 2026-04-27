@@ -2,12 +2,30 @@
     <div class="navbar-brand mt-1 mr-5">
         <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center" style="gap:8px; text-decoration:none;">
             @php
+            $schoolName = trim((string) ($currentSchool->name ?? ''));
+            if ($schoolName === '') {
+            $schoolName = Qs::getSystemName();
+            }
+
             $schoolLogo = !empty($currentSchool->logo ?? null) ? $currentSchool->logo : Qs::getSetting('logo');
+            $schoolLogo = is_string($schoolLogo) ? trim($schoolLogo) : '';
+
+            if ($schoolLogo !== '' && !preg_match('/^https?:\/\//i', $schoolLogo)) {
+            if (strpos($schoolLogo, '/storage/') === 0 || strpos($schoolLogo, '/global_assets/') === 0) {
+            $schoolLogo = asset(ltrim($schoolLogo, '/'));
+            } elseif (strpos($schoolLogo, 'storage/') === 0 || strpos($schoolLogo, 'global_assets/') === 0) {
+            $schoolLogo = asset($schoolLogo);
+            } elseif (strpos($schoolLogo, 'uploads/') === 0) {
+            $schoolLogo = asset('storage/' . $schoolLogo);
+            } else {
+            $schoolLogo = asset(ltrim($schoolLogo, '/'));
+            }
+            }
             @endphp
             @if(!empty($schoolLogo))
-            <img src="{{ $schoolLogo }}" alt="{{ !empty($currentSchool->name ?? null) ? $currentSchool->name : 'School' }}" style="height:40px; width:auto; object-fit:contain; max-width:140px;">
+            <img src="{{ $schoolLogo }}" alt="{{ $schoolName ?: 'School' }}" style="height:40px; width:auto; object-fit:contain; max-width:140px;">
             @endif
-            <span class="text-white font-weight-semibold" style="line-height:1.1;">{{ !empty($currentSchool->name) ? $currentSchool->name : 'School Dashboard' }}</span>
+            <span class="text-white font-weight-semibold" style="line-height:1.1;">{{ $schoolName !== '' ? $schoolName : 'School Dashboard' }}</span>
         </a>
     </div>
 
