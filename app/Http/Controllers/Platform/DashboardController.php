@@ -7,6 +7,7 @@ use App\Models\Affiliate;
 use App\Models\School;
 use App\Models\SchoolSubscription;
 use App\Services\PlatformNotificationService;
+use App\Services\SchoolHealthScoreService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,8 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
+        $healthService = app(SchoolHealthScoreService::class);
+
         $query = $this->buildSchoolsQuery();
         $this->applySchoolFilters($query, $request);
         $this->applySchoolSort($query, $request);
@@ -46,6 +49,10 @@ class DashboardController extends Controller
         $schools = $query
             ->paginate(20)
             ->appends($request->query());
+
+        $pageSchools = collect($schools->items());
+        $pageMetrics = $this->buildHealthMetricsBySchoolIds($pageSchools->pluck('id')->all());
+        $schoolHealthById = $healthService->scoreCollection($pageSchools, $pageMetrics)['by_school'];
 
         $schoolsIdSubquery = School::query()->select('id');
 
@@ -75,6 +82,22 @@ class DashboardController extends Controller
             'low' => 0,
             'unknown' => 0,
         ];
+
+        $schoolsForHealth = School::query()
+            ->select(['id', 'status', 'onboarding_completed_at'])
+            ->with('subscription')
+            ->withCount([
+                'users as students_count' => function ($q) {
+                    $q->where('user_type', 'student');
+                },
+                'users as teachers_count' => function ($q) {
+                    $q->where('user_type', 'teacher');
+                },
+            ])
+            ->get();
+
+        $healthMetrics = $this->buildHealthMetricsBySchoolIds($schoolsForHealth->pluck('id')->all());
+        $healthSummary = $healthService->scoreCollection($schoolsForHealth, $healthMetrics);
 
         $schoolsForRisk = School::query()
             ->select(['id', 'status'])
@@ -115,31 +138,42 @@ class DashboardController extends Controller
         $stats['risk_medium'] = $riskCounts['medium'];
         $stats['risk_low'] = $riskCounts['low'];
         $stats['risk_unknown'] = $riskCounts['unknown'];
+        $stats['health_healthy'] = $healthSummary['distribution']['healthy'] ?? 0;
+        $stats['health_watch'] = $healthSummary['distribution']['watch'] ?? 0;
+        $stats['health_at_risk'] = $healthSummary['distribution']['at_risk'] ?? 0;
+        $stats['health_critical'] = $healthSummary['distribution']['critical'] ?? 0;
+        $stats['health_average_score'] = $healthSummary['average_score'] ?? 0;
 
         $pendingAffiliates = Affiliate::where('status', 'pending')
             ->latest()
             ->limit(5)
             ->get();
 
-        return view('platform.dashboard.index', compact('schools', 'stats', 'pendingAffiliates'));
+        return view('platform.dashboard.index', compact('schools', 'stats', 'pendingAffiliates', 'schoolHealthById'));
     }
 
     public function exportSchoolsCsv(Request $request)
     {
+        $healthService = app(SchoolHealthScoreService::class);
+
         $query = $this->buildSchoolsQuery();
         $this->applySchoolFilters($query, $request);
         $this->applySchoolSort($query, $request);
 
         $schools = $query->get();
+        $healthMetrics = $this->buildHealthMetricsBySchoolIds($schools->pluck('id')->all());
+        $healthBySchoolId = $healthService->scoreCollection($schools, $healthMetrics)['by_school'];
         $filename = 'schools_export_' . now()->format('Ymd_His') . '.csv';
 
-        return response()->streamDownload(function () use ($schools) {
+        return response()->streamDownload(function () use ($schools, $healthBySchoolId) {
             $out = fopen('php://output', 'w');
 
             fputcsv($out, [
                 'School Name',
                 'Slug',
                 'Status',
+                'Health Score',
+                'Health Band',
                 'Billing Risk',
                 'Subscription Status',
                 'Payment Failures',
@@ -156,11 +190,14 @@ class DashboardController extends Controller
             foreach ($schools as $school) {
                 $subscription = $school->subscription;
                 $riskLabel = $this->determineRiskLabel($school);
+                $health = $healthBySchoolId[$school->id] ?? ['score' => 0, 'label' => 'Critical'];
 
                 fputcsv($out, [
                     $school->name,
                     $school->slug,
                     $school->status,
+                    (int) ($health['score'] ?? 0),
+                    (string) ($health['label'] ?? 'Critical'),
                     $riskLabel,
                     $subscription ? $subscription->status : 'none',
                     (int) ($subscription->payment_failures_count ?? 0),
@@ -419,6 +456,8 @@ class DashboardController extends Controller
 
     public function show(School $school)
     {
+        $healthService = app(SchoolHealthScoreService::class);
+
         $school->load('subscription')
             ->loadCount([
                 'users as total_users_count',
@@ -433,7 +472,78 @@ class DashboardController extends Controller
                 },
             ]);
 
-        return view('platform.dashboard.show', compact('school'));
+        $healthMetrics = $this->buildHealthMetricsBySchoolIds([$school->id]);
+        $health = $healthService->scoreSchool($school, $healthMetrics[$school->id] ?? []);
+
+        return view('platform.dashboard.show', compact('school', 'health'));
+    }
+
+    /**
+     * @param  array<int, int>  $schoolIds
+     * @return array<int, array<string, int>>
+     */
+    private function buildHealthMetricsBySchoolIds(array $schoolIds): array
+    {
+        $schoolIds = array_values(array_unique(array_filter(array_map('intval', $schoolIds), function ($id) {
+            return $id > 0;
+        })));
+
+        if ($schoolIds === []) {
+            return [];
+        }
+
+        $recentUsers = DB::table('users')
+            ->selectRaw('school_id, COUNT(*) as aggregate')
+            ->whereIn('school_id', $schoolIds)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('school_id')
+            ->pluck('aggregate', 'school_id')
+            ->map(function ($value) {
+                return (int) $value;
+            })
+            ->all();
+
+        $classes = DB::table('my_classes')
+            ->selectRaw('school_id, COUNT(*) as aggregate')
+            ->whereIn('school_id', $schoolIds)
+            ->groupBy('school_id')
+            ->pluck('aggregate', 'school_id')
+            ->map(function ($value) {
+                return (int) $value;
+            })
+            ->all();
+
+        $subjects = DB::table('subjects')
+            ->selectRaw('school_id, COUNT(*) as aggregate')
+            ->whereIn('school_id', $schoolIds)
+            ->groupBy('school_id')
+            ->pluck('aggregate', 'school_id')
+            ->map(function ($value) {
+                return (int) $value;
+            })
+            ->all();
+
+        $exams = DB::table('exams')
+            ->selectRaw('school_id, COUNT(*) as aggregate')
+            ->whereIn('school_id', $schoolIds)
+            ->groupBy('school_id')
+            ->pluck('aggregate', 'school_id')
+            ->map(function ($value) {
+                return (int) $value;
+            })
+            ->all();
+
+        $out = [];
+        foreach ($schoolIds as $schoolId) {
+            $out[$schoolId] = [
+                'recent_users_30d' => $recentUsers[$schoolId] ?? 0,
+                'classes_count' => $classes[$schoolId] ?? 0,
+                'subjects_count' => $subjects[$schoolId] ?? 0,
+                'exams_count' => $exams[$schoolId] ?? 0,
+            ];
+        }
+
+        return $out;
     }
 
     public function suspend(School $school)

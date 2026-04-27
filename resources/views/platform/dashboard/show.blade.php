@@ -83,6 +83,19 @@
                 @endphp
                 <table class="table table-borderless table-sm">
                     <tr>
+                        <th style="width:220px;">Health Score</th>
+                        <td>
+                            <span class="badge badge-{{ $health['badge'] ?? 'secondary' }}">{{ $health['label'] ?? 'Unknown' }}</span>
+                            <span class="ml-2 font-weight-semibold">{{ number_format((int) ($health['score'] ?? 0)) }}/100</span>
+                        </td>
+                    </tr>
+                    @if(!empty($health['drivers']))
+                    <tr>
+                        <th>Health Drivers</th>
+                        <td>{{ implode(' | ', $health['drivers']) }}</td>
+                    </tr>
+                    @endif
+                    <tr>
                         <th style="width:220px;">Billing Risk</th>
                         <td><span class="badge badge-{{ $billingRiskClass }}">{{ $billingRiskLabel }}</span></td>
                     </tr>

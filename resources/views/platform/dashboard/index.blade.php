@@ -108,6 +108,54 @@
     </div>
 </div>
 
+<div class="row mb-2">
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-success text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['health_healthy'] ?? 0) }}</h3>
+                <i class="icon-heart5 font-size-24"></i>
+            </div>
+            <div>Health: Healthy</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-info text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['health_watch'] ?? 0) }}</h3>
+                <i class="icon-eye8 font-size-24"></i>
+            </div>
+            <div>Health: Watch</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-warning text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['health_at_risk'] ?? 0) }}</h3>
+                <i class="icon-alert font-size-24"></i>
+            </div>
+            <div>Health: At Risk</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-danger text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['health_critical'] ?? 0) }}</h3>
+                <i class="icon-warning22 font-size-24"></i>
+            </div>
+            <div>Health: Critical</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-body bg-indigo text-white mb-3">
+            <div class="d-flex justify-content-between">
+                <h3 class="font-weight-semibold mb-0">{{ number_format($stats['health_average_score'] ?? 0) }}</h3>
+                <i class="icon-stats-bars font-size-24"></i>
+            </div>
+            <div>Average Health Score</div>
+        </div>
+    </div>
+</div>
+
 {{-- Affiliate summary --}}
 <div class="row mb-3">
     <div class="col-sm-4">
@@ -263,6 +311,7 @@
                         <th class="text-center">Students</th>
                         <th class="text-center">Total Users</th>
                         <th>Status</th>
+                        <th>Health</th>
                         <th>Billing Risk</th>
                         <th>Subscription</th>
                         <th>Created</th>
@@ -293,6 +342,13 @@
                     $riskLabel = 'Low';
                     $riskClass = 'success';
                     }
+
+                    $health = $schoolHealthById[$school->id] ?? [
+                    'score' => 0,
+                    'label' => 'Critical',
+                    'badge' => 'danger',
+                    'drivers' => [],
+                    ];
                     @endphp
                     <tr>
                         <td>
@@ -314,6 +370,13 @@
                             <span class="badge badge-primary">Trial</span>
                             @else
                             <span class="badge badge-warning">Suspended</span>
+                            @endif
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ $health['badge'] }}">{{ $health['label'] }}</span>
+                            <div class="text-muted small">{{ number_format((int) $health['score']) }}/100</div>
+                            @if(!empty($health['drivers'][0]))
+                            <div class="text-muted small">{{ $health['drivers'][0] }}</div>
                             @endif
                         </td>
                         <td>
@@ -355,7 +418,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="text-center text-muted">No schools found.</td>
+                        <td colspan="11" class="text-center text-muted">No schools found.</td>
                     </tr>
                     @endforelse
                 </tbody>
