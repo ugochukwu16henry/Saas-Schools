@@ -7,6 +7,7 @@ use App\Models\Affiliate;
 use App\Models\School;
 use App\Models\SchoolSubscription;
 use App\Services\PlatformNotificationService;
+use App\Services\SchoolAuditLogService;
 use App\Services\SchoolHealthScoreService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -472,10 +473,15 @@ class DashboardController extends Controller
                 },
             ]);
 
+        $auditLogs = $school->auditLogs()
+            ->latest('id')
+            ->limit(30)
+            ->get();
+
         $healthMetrics = $this->buildHealthMetricsBySchoolIds([$school->id]);
         $health = $healthService->scoreSchool($school, $healthMetrics[$school->id] ?? []);
 
-        return view('platform.dashboard.show', compact('school', 'health'));
+        return view('platform.dashboard.show', compact('school', 'health', 'auditLogs'));
     }
 
     /**
@@ -548,14 +554,30 @@ class DashboardController extends Controller
 
     public function suspend(School $school)
     {
+        $before = ['status' => $school->status];
         $school->update(['status' => 'suspended']);
+        app(SchoolAuditLogService::class)->logDiff(
+            $school,
+            'school_status_updated',
+            $before,
+            ['status' => 'suspended'],
+            ['source' => 'platform.dashboard.suspend']
+        );
 
         return back()->with('status', "{$school->name} has been suspended.");
     }
 
     public function activate(School $school)
     {
+        $before = ['status' => $school->status];
         $school->update(['status' => 'active']);
+        app(SchoolAuditLogService::class)->logDiff(
+            $school,
+            'school_status_updated',
+            $before,
+            ['status' => 'active'],
+            ['source' => 'platform.dashboard.activate']
+        );
 
         return back()->with('status', "{$school->name} has been activated.");
     }
@@ -566,7 +588,15 @@ class DashboardController extends Controller
             'free_student_limit' => ['required', 'integer', 'min:0', 'max:100000'],
         ]);
 
+        $before = ['free_student_limit' => (int) $school->free_student_limit];
         $school->update(['free_student_limit' => $request->integer('free_student_limit')]);
+        app(SchoolAuditLogService::class)->logDiff(
+            $school,
+            'school_plan_updated',
+            $before,
+            ['free_student_limit' => (int) $school->free_student_limit],
+            ['source' => 'platform.dashboard.update_plan']
+        );
         app(PlatformNotificationService::class)->planOverrideUpdated($school, (int) $school->free_student_limit);
 
         return back()->with('status', "Free student limit updated to {$school->free_student_limit} for {$school->name}.");

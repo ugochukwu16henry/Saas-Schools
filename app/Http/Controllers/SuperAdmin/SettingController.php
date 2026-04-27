@@ -4,10 +4,12 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Helpers\Qs;
 use App\Models\School;
+use App\Models\Setting;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SettingUpdate;
 use App\Repositories\MyClassRepo;
 use App\Repositories\SettingRepo;
+use App\Services\SchoolAuditLogService;
 
 class SettingController extends Controller
 {
@@ -31,8 +33,24 @@ class SettingController extends Controller
 
     public function update(SettingUpdate $req)
     {
+        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+
         $sets = $req->except('_token', '_method', 'logo');
         $sets['lock_exam'] = $sets['lock_exam'] == 1 ? 1 : 0;
+
+        $before = [];
+        if ($school) {
+            $trackedKeys = array_keys($sets);
+            if ($req->hasFile('logo')) {
+                $trackedKeys[] = 'logo';
+            }
+
+            $before = Setting::query()
+                ->whereIn('type', $trackedKeys)
+                ->pluck('description', 'type')
+                ->toArray();
+        }
+
         $keys = array_keys($sets);
         $values = array_values($sets);
         for ($i = 0; $i < count($sets); $i++) {
@@ -52,6 +70,21 @@ class SettingController extends Controller
             if ($schoolId) {
                 School::where('id', $schoolId)->update(['logo' => $logo_path]);
             }
+        }
+
+        if ($school) {
+            $after = Setting::query()
+                ->whereIn('type', array_keys($before))
+                ->pluck('description', 'type')
+                ->toArray();
+
+            app(SchoolAuditLogService::class)->logDiff(
+                $school,
+                'school_settings_updated',
+                $before,
+                $after,
+                ['source' => 'super_admin.settings.update']
+            );
         }
 
         return back()->with('flash_success', __('msg.update_ok'));

@@ -46,6 +46,11 @@ class School extends Model
         return $this->belongsTo(Affiliate::class);
     }
 
+    public function auditLogs()
+    {
+        return $this->hasMany(SchoolAuditLog::class);
+    }
+
     /**
      * Number of students above the free limit (billable).
      */

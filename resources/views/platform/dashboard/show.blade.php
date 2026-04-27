@@ -240,6 +240,63 @@
 
         <hr>
 
+        <div class="card mb-3 border">
+            <div class="card-header bg-light py-2">
+                <h6 class="card-title mb-0">School Audit Log (Recent)</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:170px;">When</th>
+                                <th style="width:180px;">Action</th>
+                                <th style="width:160px;">Actor</th>
+                                <th>Changes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($auditLogs as $log)
+                            <tr>
+                                <td>{{ optional($log->created_at)->format('d M Y h:i A') }}</td>
+                                <td><span class="badge badge-light">{{ str_replace('_', ' ', $log->action) }}</span></td>
+                                <td>
+                                    @if($log->actor_type === 'platform_admin')
+                                    Platform Admin #{{ $log->actor_id ?: '-' }}
+                                    @elseif($log->actor_type === 'user')
+                                    User #{{ $log->actor_id ?: '-' }}
+                                    @else
+                                    System
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(is_array($log->changes) && count($log->changes) > 0)
+                                    @foreach($log->changes as $field => $change)
+                                    <div class="small">
+                                        <span class="text-muted">{{ $field }}</span>:
+                                        <span>{{ is_scalar($change['from'] ?? null) ? (string) ($change['from'] ?? '-') : '-' }}</span>
+                                        <i class="icon-arrow-right12 mx-1 text-muted"></i>
+                                        <span>{{ is_scalar($change['to'] ?? null) ? (string) ($change['to'] ?? '-') : '-' }}</span>
+                                    </div>
+                                    @endforeach
+                                    @else
+                                    <span class="text-muted">No field-level changes recorded.</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center text-muted p-3">No audit entries yet.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
         <div class="d-flex flex-wrap" style="gap:8px;">
             @if($school->status === 'suspended')
             <form method="POST" action="{{ route('platform.schools.activate', $school) }}">
