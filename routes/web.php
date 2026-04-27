@@ -126,6 +126,8 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
 
     Route::get('/home', 'HomeController@dashboard')->name('home');
     Route::get('/dashboard', 'HomeController@dashboard')->name('dashboard');
+    Route::get('/onboarding', 'OnboardingController@index')->name('onboarding.index');
+    Route::patch('/onboarding/complete', 'OnboardingController@complete')->name('onboarding.complete');
 
     Route::group(['prefix' => 'my_account'], function () {
         Route::get('/', 'MyAccountController@edit_profile')->name('my_account');

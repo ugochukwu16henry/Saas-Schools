@@ -23,6 +23,7 @@ class School extends Model
 
     protected $casts = [
         'affiliate_attributed_at' => 'datetime',
+        'onboarding_completed_at' => 'datetime',
     ];
 
     public function users()

@@ -218,6 +218,12 @@
 
                 @include('pages.'.Qs::getUserType().'.menu')
 
+                @if(Qs::userIsTeamSA())
+                <li class="nav-item">
+                    <a href="{{ route('onboarding.index') }}" class="nav-link {{ Route::is('onboarding.index') ? 'active' : '' }}"><i class="icon-list2"></i> <span>Onboarding</span></a>
+                </li>
+                @endif
+
                 {{--Manage Account--}}
                 <li class="nav-item">
                     <a href="{{ route('my_account') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['my_account']) ? 'active' : '' }}"><i class="icon-user"></i> <span>My Account</span></a>
