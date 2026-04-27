@@ -16,12 +16,12 @@ class BloodGroupsTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('blood_groups')->delete();
-
         $bgs = ['O-', 'O+', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
-        foreach($bgs as  $bg){
-            BloodGroup::create(['name' => $bg]);
+
+        if (DB::table('blood_groups')->count() === 0) {
+            DB::table('blood_groups')->insert(
+                array_map(fn($bg) => ['name' => $bg], $bgs)
+            );
         }
     }
-
 }

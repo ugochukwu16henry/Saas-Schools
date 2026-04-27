@@ -51,8 +51,10 @@ class StatesTableSeeder extends Seeder
             'Zamfara',
         ];
 
-        foreach ($states as $state) {
-            State::firstOrCreate(['name' => $state]);
+        if (DB::table('states')->count() === 0) {
+            DB::table('states')->insert(
+                array_map(fn($s) => ['name' => $s], $states)
+            );
         }
     }
 }

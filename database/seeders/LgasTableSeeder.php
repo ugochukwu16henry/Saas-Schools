@@ -1566,8 +1566,12 @@ class LgasTableSeeder extends Seeder
             "Zurmi",
         ];
 
-        for ($i = 0; $i < count($lgas); $i++) {
-            Lga::firstOrCreate(['state_id' => $state_id[$i], 'name' => $lgas[$i]]);
+        if (DB::table('lgas')->count() === 0) {
+            $rows = [];
+            for ($i = 0; $i < count($lgas); $i++) {
+                $rows[] = ['state_id' => $state_id[$i], 'name' => $lgas[$i]];
+            }
+            DB::table('lgas')->insert($rows);
         }
     }
 }

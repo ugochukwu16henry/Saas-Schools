@@ -211,8 +211,10 @@ class NationalitiesTableSeeder extends Seeder
             'Zimbabwean'
         );
 
-        foreach ($nationals as $n) {
-            Nationality::firstOrCreate(['name' => $n]);
+        if (\Illuminate\Support\Facades\DB::table('nationalities')->count() === 0) {
+            \Illuminate\Support\Facades\DB::table('nationalities')->insert(
+                array_map(fn($n) => ['name' => $n], $nationals)
+            );
         }
     }
 }
