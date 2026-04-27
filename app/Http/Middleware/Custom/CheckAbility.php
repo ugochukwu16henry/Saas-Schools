@@ -26,7 +26,8 @@ class CheckAbility
             return redirect()->route('login');
         }
 
-        $allowedActors = (array) config('permissions.abilities.' . $ability, []);
+        $allAbilities = config('permissions.abilities', []);
+        $allowedActors = (array) ($allAbilities[$ability] ?? []);
         if (in_array('*', $allowedActors, true) || in_array($actor, $allowedActors, true)) {
             return $next($request);
         }

@@ -12,7 +12,7 @@ class AbilityActorMatrixTest extends TestCase
 {
     public function testTeacherAllowedForMarksAbility()
     {
-        config(['permissions.abilities.school.marks.manage' => ['super_admin', 'admin', 'teacher']]);
+        config(['permissions' => ['abilities' => ['school.marks.manage' => ['super_admin', 'admin', 'teacher']]]]);
         $this->mockSchoolActor('teacher', 301);
 
         $middleware = new CheckAbility();
@@ -27,7 +27,7 @@ class AbilityActorMatrixTest extends TestCase
 
     public function testTeacherDeniedForSettingsAbility()
     {
-        config(['permissions.abilities.school.settings.manage' => ['super_admin', 'admin']]);
+        config(['permissions' => ['abilities' => ['school.settings.manage' => ['super_admin', 'admin']]]]);
         $this->mockSchoolActor('teacher', 302);
 
         $middleware = new CheckAbility();
@@ -45,7 +45,7 @@ class AbilityActorMatrixTest extends TestCase
 
     public function testPlatformAdminAllowedForWebhookAbility()
     {
-        config(['permissions.abilities.platform.webhooks.manage' => ['platform_admin']]);
+        config(['permissions' => ['abilities' => ['platform.webhooks.manage' => ['platform_admin']]]]);
 
         $platformGuard = \Mockery::mock();
         $platformGuard->shouldReceive('check')->once()->andReturn(true);
@@ -65,7 +65,7 @@ class AbilityActorMatrixTest extends TestCase
 
     public function testSchoolSuperAdminDeniedForPlatformAffiliateAbility()
     {
-        config(['permissions.abilities.platform.affiliates.manage' => ['platform_admin']]);
+        config(['permissions' => ['abilities' => ['platform.affiliates.manage' => ['platform_admin']]]]);
 
         $platformGuard = \Mockery::mock();
         $platformGuard->shouldReceive('check')->once()->andReturn(false);

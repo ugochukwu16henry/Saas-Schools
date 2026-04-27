@@ -12,7 +12,7 @@ class CheckAbilityMiddlewareTest extends TestCase
 {
     public function testAllowsConfiguredSchoolActor()
     {
-        config(['permissions.abilities.school.marks.manage' => ['super_admin', 'teacher']]);
+        config(['permissions' => ['abilities' => ['school.marks.manage' => ['super_admin', 'teacher']]]]);
 
         $webGuard = \Mockery::mock();
         $webGuard->shouldReceive('check')->once()->andReturn(true);
@@ -34,7 +34,7 @@ class CheckAbilityMiddlewareTest extends TestCase
 
     public function testDeniesActorOutsideAbilityMatrix()
     {
-        config(['permissions.abilities.school.settings.manage' => ['super_admin', 'admin']]);
+        config(['permissions' => ['abilities' => ['school.settings.manage' => ['super_admin', 'admin']]]]);
 
         $webGuard = \Mockery::mock();
         $webGuard->shouldReceive('check')->once()->andReturn(true);
@@ -60,7 +60,7 @@ class CheckAbilityMiddlewareTest extends TestCase
 
     public function testRedirectsToLoginWhenNoAuthenticatedActor()
     {
-        config(['permissions.abilities.school.users.manage' => ['super_admin', 'admin']]);
+        config(['permissions' => ['abilities' => ['school.users.manage' => ['super_admin', 'admin']]]]);
 
         $webGuard = \Mockery::mock();
         $webGuard->shouldReceive('check')->once()->andReturn(false);
@@ -81,7 +81,7 @@ class CheckAbilityMiddlewareTest extends TestCase
 
     public function testAllowsPlatformActorForPlatformAbility()
     {
-        config(['permissions.abilities.platform.schools.manage' => ['platform_admin']]);
+        config(['permissions' => ['abilities' => ['platform.schools.manage' => ['platform_admin']]]]);
 
         $platformGuard = \Mockery::mock();
 
@@ -102,7 +102,7 @@ class CheckAbilityMiddlewareTest extends TestCase
 
     public function testSchoolRoutePrefersWebActorEvenWhenPlatformSessionExists()
     {
-        config(['permissions.abilities.school.settings.manage' => ['super_admin', 'admin']]);
+        config(['permissions' => ['abilities' => ['school.settings.manage' => ['super_admin', 'admin']]]]);
 
         $webGuard = \Mockery::mock();
         $webGuard->shouldReceive('check')->once()->andReturn(true);
@@ -124,7 +124,7 @@ class CheckAbilityMiddlewareTest extends TestCase
 
     public function testPlatformRouteUsesPlatformActorWhenGuardHintPresent()
     {
-        config(['permissions.abilities.platform.schools.manage' => ['platform_admin']]);
+        config(['permissions' => ['abilities' => ['platform.schools.manage' => ['platform_admin']]]]);
 
         $platformGuard = \Mockery::mock();
 
