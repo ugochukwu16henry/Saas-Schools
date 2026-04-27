@@ -23,5 +23,9 @@ return [
         'school.users.manage' => ['super_admin', 'admin'],
         'school.students.manage' => ['super_admin', 'admin'],
         'school.students.bulk_import' => ['super_admin', 'admin'],
+        'school.subjects.manage' => ['super_admin', 'admin'],
+        'school.exams.manage' => ['super_admin', 'admin'],
+        'school.payments.manage' => ['super_admin', 'admin', 'accountant'],
+        'school.marks.manage' => ['super_admin', 'admin', 'teacher'],
     ],
 ];
