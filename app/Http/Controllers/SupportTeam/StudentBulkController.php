@@ -118,7 +118,19 @@ class StudentBulkController extends Controller
             'default_address' => 'required|string|min:6|max:120',
         ])->validate();
 
-        $parsed = $excelService->parseStudentSheet($file);
+        try {
+            $parsed = $excelService->parseStudentSheet($file);
+        } catch (\Throwable $e) {
+            Log::warning('student_bulk_import_parse_failed', [
+                'message' => $e->getMessage(),
+                'school_id' => optional(app()->bound('currentSchool') ? app('currentSchool') : null)->id,
+                'user_id' => auth()->id(),
+            ]);
+
+            return $this->bulkImportRedirect($request)
+                ->with('flash_danger', 'The uploaded spreadsheet could not be read. Please use the downloaded template and upload a valid .xlsx or .xls file.');
+        }
+
         if ($parsed['errors']) {
             return $this->bulkImportRedirect($request)
                 ->with('flash_danger', implode(' ', $parsed['errors']));

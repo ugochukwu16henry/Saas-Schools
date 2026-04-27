@@ -3,7 +3,11 @@
 namespace Tests\Feature;
 
 use App\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\ViewErrorBag;
+use Illuminate\Support\Facades\DB;
+use Mockery;
+use App\Services\StudentBulkExcelService;
 use Tests\TestCase;
 
 class BulkStudentImportFlowTest extends TestCase
@@ -53,5 +57,49 @@ class BulkStudentImportFlowTest extends TestCase
         $this->assertEquals(9, session('_old_input.lga_id'));
         $this->assertEquals('Address to be updated from student profile', session('_old_input.default_address'));
         $this->assertNull(session('_old_input.import_file'));
+    }
+
+    public function testBulkImportRejectsNonExcelFilesBeforeRowValidation(): void
+    {
+        $this->withoutMiddleware();
+
+        $response = $this->from(route('students.bulk.create'))->post(route('students.bulk.store'), [
+            'import_file' => UploadedFile::fake()->create('students.csv', 5, 'text/csv'),
+            'nal_id' => 12,
+            'state_id' => 5,
+            'lga_id' => 9,
+            'default_address' => 'Address to be updated from student profile',
+        ]);
+
+        $response->assertRedirect(route('students.bulk.create'));
+        $response->assertSessionHasErrors([
+            'import_file' => 'Only .xlsx or .xls files are allowed.',
+        ]);
+    }
+
+    public function testBulkImportShowsFriendlyMessageWhenSpreadsheetParsingFails(): void
+    {
+        $this->withoutMiddleware();
+
+        DB::table('nationalities')->updateOrInsert(['id' => 91001], ['name' => 'Test Nationality']);
+        DB::table('states')->updateOrInsert(['id' => 91001], ['name' => 'Test State']);
+        DB::table('lgas')->updateOrInsert(['id' => 91001], ['state_id' => 91001, 'name' => 'Test LGA']);
+
+        $mock = Mockery::mock(StudentBulkExcelService::class);
+        $mock->shouldReceive('parseStudentSheet')
+            ->once()
+            ->andThrow(new \RuntimeException('Corrupt workbook'));
+        $this->app->instance(StudentBulkExcelService::class, $mock);
+
+        $response = $this->from(route('students.bulk.create'))->post(route('students.bulk.store'), [
+            'import_file' => UploadedFile::fake()->create('students.xlsx', 5, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+            'nal_id' => 91001,
+            'state_id' => 91001,
+            'lga_id' => 91001,
+            'default_address' => 'Address to be updated from student profile',
+        ]);
+
+        $response->assertRedirect(route('students.bulk.create'));
+        $response->assertSessionHas('flash_danger', 'The uploaded spreadsheet could not be read. Please use the downloaded template and upload a valid .xlsx or .xls file.');
     }
 }
