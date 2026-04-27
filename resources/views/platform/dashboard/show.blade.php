@@ -46,8 +46,20 @@
                         </td>
                     </tr>
                     <tr>
+                        <th>Billing Plan</th>
+                        <td>{{ optional($school->billingPlan)->name ?: 'Standard' }}</td>
+                    </tr>
+                    <tr>
                         <th>Free Student Limit</th>
-                        <td>{{ number_format($school->free_student_limit) }}</td>
+                        <td>{{ number_format($school->effectiveFreeStudentLimit()) }}</td>
+                    </tr>
+                    <tr>
+                        <th>Monthly Rate</th>
+                        <td>₦{{ number_format($school->effectiveMonthlyRate()) }} / student</td>
+                    </tr>
+                    <tr>
+                        <th>One-time Add Rate</th>
+                        <td>₦{{ number_format($school->effectiveOneTimeAddRate()) }} / student</td>
                     </tr>
                     <tr>
                         <th>Created</th>
@@ -230,6 +242,37 @@
                                 </div>
                             </div>
                             @error('free_student_limit')
+                            <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
+                            @enderror
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border">
+                    <div class="card-header bg-light py-2">
+                        <h6 class="card-title mb-0">Assign Billing Plan</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Select the pricing/allowance template for this school. Free student limit override above remains available.
+                        </p>
+                        <form method="POST" action="{{ route('platform.schools.update_billing_plan', $school) }}" class="form-inline">
+                            @csrf
+                            @method('PATCH')
+                            <div class="input-group" style="max-width:360px; width:100%;">
+                                <select name="billing_plan_id" class="form-control @error('billing_plan_id') is-invalid @enderror" required>
+                                    @foreach($billingPlans as $plan)
+                                    <option value="{{ $plan->id }}" {{ (int) old('billing_plan_id', $school->billing_plan_id) === (int) $plan->id ? 'selected' : '' }}>
+                                        {{ $plan->name }} (₦{{ number_format($plan->monthly_rate_per_student) }}/m, ₦{{ number_format($plan->one_time_add_rate) }} one-time, free {{ number_format($plan->default_free_student_limit) }})
+                                    </option>
+                                    @endforeach
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary">Assign</button>
+                                </div>
+                            </div>
+                            @error('billing_plan_id')
                             <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
                             @enderror
                         </form>

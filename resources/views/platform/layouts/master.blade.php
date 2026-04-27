@@ -36,6 +36,9 @@
                     <a href="{{ route('platform.revenue') }}" class="nav-link">Revenue</a>
                 </li>
                 <li class="nav-item">
+                    <a href="{{ route('platform.billing_plans.index') }}" class="nav-link">Billing Plans</a>
+                </li>
+                <li class="nav-item">
                     <a href="{{ route('platform.usage.index') }}" class="nav-link">Usage</a>
                 </li>
                 <li class="nav-item">

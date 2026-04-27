@@ -14,9 +14,6 @@ use Illuminate\Support\Facades\Log;
 
 class PaystackController extends Controller
 {
-    private const MONTHLY_RATE = 100;
-    private const ONE_TIME_ADD_RATE = 500;
-
     private string $secretKey;
     private string $baseUrl;
     private BillingDunningNotificationService $dunningNotifier;
@@ -33,7 +30,7 @@ class PaystackController extends Controller
      */
     public function prompt()
     {
-        $school = app('currentSchool');
+        $school = app('currentSchool')->loadMissing('billingPlan');
         $studentCount = $school->users()->where('user_type', 'student')->count();
         $billing = $this->buildBillingSummary($school, $studentCount);
 
@@ -41,8 +38,10 @@ class PaystackController extends Controller
             compact('school', 'studentCount'),
             $billing,
             [
-                'monthlyRate' => self::MONTHLY_RATE,
-                'oneTimeRate' => self::ONE_TIME_ADD_RATE,
+                'monthlyRate' => $billing['monthlyRate'],
+                'oneTimeRate' => $billing['oneTimeRate'],
+                'freeLimit' => $billing['freeLimit'],
+                'planName' => $billing['planName'],
             ]
         ));
     }
@@ -52,7 +51,7 @@ class PaystackController extends Controller
      */
     public function initialize(Request $request)
     {
-        $school = app('currentSchool');
+        $school = app('currentSchool')->loadMissing('billingPlan');
         $user   = auth()->user();
 
         $studentCount  = $school->users()->where('user_type', 'student')->count();
@@ -76,6 +75,10 @@ class PaystackController extends Controller
                     'monthly_amount' => $billing['monthlyAmount'],
                     'one_time_amount' => $billing['oneTimeAmount'],
                     'total_due' => $billing['totalDue'],
+                    'monthly_rate' => $billing['monthlyRate'],
+                    'one_time_rate' => $billing['oneTimeRate'],
+                    'free_limit' => $billing['freeLimit'],
+                    'billing_plan_id' => $school->billing_plan_id,
                     'cancel_action'  => route('billing.prompt'),
                 ],
             ]);
@@ -325,7 +328,7 @@ class PaystackController extends Controller
      */
     public function status()
     {
-        $school       = app('currentSchool');
+        $school       = app('currentSchool')->loadMissing('billingPlan');
         $sub          = $school->subscription;
         $studentCount = $school->users()->where('user_type', 'student')->count();
         $billing      = $this->buildBillingSummary($school, $studentCount);
@@ -334,24 +337,35 @@ class PaystackController extends Controller
             compact('school', 'studentCount', 'sub'),
             $billing,
             [
-                'monthlyRate' => self::MONTHLY_RATE,
-                'oneTimeRate' => self::ONE_TIME_ADD_RATE,
+                'monthlyRate' => $billing['monthlyRate'],
+                'oneTimeRate' => $billing['oneTimeRate'],
+                'freeLimit' => $billing['freeLimit'],
+                'planName' => $billing['planName'],
             ]
         ));
     }
 
     private function buildBillingSummary(School $school, int $studentCount): array
     {
-        $billableCount = max(0, $studentCount - $school->free_student_limit);
+        $monthlyRate = $school->effectiveMonthlyRate();
+        $oneTimeRate = $school->effectiveOneTimeAddRate();
+        $freeLimit = $school->effectiveFreeStudentLimit();
+        $planName = $school->billingPlan ? $school->billingPlan->name : 'Standard';
+
+        $billableCount = max(0, $studentCount - $freeLimit);
 
         $alreadyPaidOneTime = (int) optional($school->subscription)->billed_students;
         $newlyAddedCount = max(0, $billableCount - $alreadyPaidOneTime);
 
-        $monthlyAmount = $billableCount * self::MONTHLY_RATE;
-        $oneTimeAmount = $newlyAddedCount * self::ONE_TIME_ADD_RATE;
+        $monthlyAmount = $billableCount * $monthlyRate;
+        $oneTimeAmount = $newlyAddedCount * $oneTimeRate;
         $totalDue = $monthlyAmount + $oneTimeAmount;
 
         return [
+            'planName' => $planName,
+            'freeLimit' => $freeLimit,
+            'monthlyRate' => $monthlyRate,
+            'oneTimeRate' => $oneTimeRate,
             'billableCount' => $billableCount,
             'alreadyPaidOneTime' => $alreadyPaidOneTime,
             'newlyAddedCount' => $newlyAddedCount,

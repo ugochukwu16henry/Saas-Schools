@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class RevenueController extends Controller
 {
-    // Monthly rate per billable student (₦)
-    private const MONTHLY_RATE = 100;
-
     public function index(Request $request)
     {
         // ── Subscription status counts ──────────────────────────────────────
@@ -27,9 +24,18 @@ class RevenueController extends Controller
         $expiredCount   = (int) ($statusCounts['expired']   ?? 0);
         $cancelledCount = (int) ($statusCounts['cancelled'] ?? 0);
 
-        // ── MRR: active subscribers × their billed_students × rate ──────────
-        $mrr = (int) SchoolSubscription::where('status', 'active')
-            ->sum(DB::raw('billed_students * ' . self::MONTHLY_RATE));
+        $activeSubs = SchoolSubscription::query()
+            ->with('school.billingPlan')
+            ->where('status', 'active')
+            ->get();
+
+        // ── MRR: active subscribers × billed_students × each school's plan rate ─
+        $mrr = (int) $activeSubs->sum(function ($sub) {
+            $school = $sub->school;
+            $rate = $school ? $school->effectiveMonthlyRate() : 100;
+
+            return ((int) $sub->billed_students) * $rate;
+        });
 
         $arr = $mrr * 12;
 
@@ -75,11 +81,13 @@ class RevenueController extends Controller
 
         // ── Top paying schools (by billed_students) ──────────────────────────
         $topSchools = SchoolSubscription::query()
-            ->with('school:id,name,slug,email')
+            ->with(['school:id,name,slug,email,billing_plan_id', 'school.billingPlan:id,monthly_rate_per_student'])
             ->where('status', 'active')
             ->orderByDesc('billed_students')
             ->limit(10)
             ->get();
+
+        $displayRateText = 'Plan-based rates';
 
         return view('platform.revenue.index', compact(
             'activeCount',
@@ -94,6 +102,7 @@ class RevenueController extends Controller
             'monthlyGrowth',
             'monthlyChurn',
             'topSchools',
+            'displayRateText',
         ));
     }
 }

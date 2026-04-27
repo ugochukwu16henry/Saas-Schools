@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
+use App\Models\BillingPlan;
 use App\Models\School;
 use App\Models\SchoolSubscription;
 use App\Services\PlatformNotificationService;
@@ -460,6 +461,7 @@ class DashboardController extends Controller
         $healthService = app(SchoolHealthScoreService::class);
 
         $school->load('subscription')
+            ->load('billingPlan')
             ->loadCount([
                 'users as total_users_count',
                 'users as students_count' => function ($q) {
@@ -477,11 +479,16 @@ class DashboardController extends Controller
             ->latest('id')
             ->limit(30)
             ->get();
+        $billingPlans = BillingPlan::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get();
 
         $healthMetrics = $this->buildHealthMetricsBySchoolIds([$school->id]);
         $health = $healthService->scoreSchool($school, $healthMetrics[$school->id] ?? []);
 
-        return view('platform.dashboard.show', compact('school', 'health', 'auditLogs'));
+        return view('platform.dashboard.show', compact('school', 'health', 'auditLogs', 'billingPlans'));
     }
 
     /**
@@ -600,6 +607,31 @@ class DashboardController extends Controller
         app(PlatformNotificationService::class)->planOverrideUpdated($school, (int) $school->free_student_limit);
 
         return back()->with('status', "Free student limit updated to {$school->free_student_limit} for {$school->name}.");
+    }
+
+    public function updateBillingPlan(Request $request, School $school)
+    {
+        $request->validate([
+            'billing_plan_id' => ['required', 'integer', 'exists:billing_plans,id'],
+        ]);
+
+        $plan = BillingPlan::query()->findOrFail($request->integer('billing_plan_id'));
+        $before = ['billing_plan_id' => (int) ($school->billing_plan_id ?? 0)];
+
+        $school->update(['billing_plan_id' => $plan->id]);
+
+        app(SchoolAuditLogService::class)->logDiff(
+            $school,
+            'school_billing_plan_updated',
+            $before,
+            ['billing_plan_id' => (int) $plan->id],
+            [
+                'source' => 'platform.dashboard.update_billing_plan',
+                'plan_name' => $plan->name,
+            ]
+        );
+
+        return back()->with('status', "Billing plan updated to {$plan->name} for {$school->name}.");
     }
 
     public function destroy(School $school)

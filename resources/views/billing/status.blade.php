@@ -28,6 +28,7 @@ $trialDaysLeft = ($isTrialling && $sub->trial_ends_at) ? max(0, (int) now()->dif
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h4 class="font-weight-semibold mb-0">Billing &amp; Subscription</h4>
+    <span class="badge badge-light">Plan: {{ $planName }}</span>
 </div>
 
 {{-- ── Suspension / failure banner ───────────────────────────────────── --}}
@@ -87,7 +88,7 @@ $trialDaysLeft = ($isTrialling && $sub->trial_ends_at) ? max(0, (int) now()->dif
                 <div class="card-body py-3 d-flex justify-content-between align-items-center">
                     <div>
                         <div class="text-muted small">Free Student Allowance</div>
-                        <div class="font-size-lg font-weight-bold mt-1">{{ number_format($school->free_student_limit) }}</div>
+                        <div class="font-size-lg font-weight-bold mt-1">{{ number_format($freeLimit) }}</div>
                     </div>
                     <i class="icon-gift text-muted" style="font-size:2rem;"></i>
                 </div>
@@ -188,7 +189,7 @@ $trialDaysLeft = ($isTrialling && $sub->trial_ends_at) ? max(0, (int) now()->dif
                             </tr>
                             <tr>
                                 <th class="text-muted">Free Allowance</th>
-                                <td>− {{ number_format($school->free_student_limit) }}</td>
+                                <td>− {{ number_format($freeLimit) }}</td>
                             </tr>
                             <tr>
                                 <th class="text-muted">Billable Students</th>

@@ -105,7 +105,11 @@ Route::group(['prefix' => 'platform'], function () {
         Route::patch('/affiliates/{affiliate}/payouts/{payout}/paid', 'Platform\AffiliateAdminController@markPayoutPaid')->name('platform.affiliates.payouts.paid');
         Route::delete('/affiliates/{affiliate}', 'Platform\AffiliateAdminController@destroy')->name('platform.affiliates.destroy');
         Route::get('/revenue', 'Platform\RevenueController@index')->name('platform.revenue');
+        Route::get('/billing-plans', 'Platform\BillingPlanController@index')->name('platform.billing_plans.index');
+        Route::post('/billing-plans', 'Platform\BillingPlanController@store')->name('platform.billing_plans.store');
+        Route::patch('/billing-plans/{billingPlan}', 'Platform\BillingPlanController@update')->name('platform.billing_plans.update');
         Route::patch('/schools/{school}/plan', 'Platform\\DashboardController@updatePlan')->name('platform.schools.update_plan');
+        Route::patch('/schools/{school}/billing-plan', 'Platform\\DashboardController@updateBillingPlan')->name('platform.schools.update_billing_plan');
         Route::get('/schools/{school}', 'Platform\DashboardController@show')->name('platform.schools.show');
         Route::patch('/schools/{school}/suspend', 'Platform\DashboardController@suspend')->name('platform.schools.suspend');
         Route::patch('/schools/{school}/activate', 'Platform\DashboardController@activate')->name('platform.schools.activate');

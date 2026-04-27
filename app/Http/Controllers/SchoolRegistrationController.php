@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\School;
+use App\Models\BillingPlan;
 use App\Models\Setting;
 use App\Notifications\SchoolWelcomeNotification;
 use App\Services\AffiliateReferralService;
@@ -42,6 +43,10 @@ class SchoolRegistrationController extends Controller
         DB::transaction(function () use ($request, &$newUser, &$newSchool) {
             $referral = trim((string) ($request->input('ref') ?: $request->session()->get('school_registration_ref')));
             $affiliateId = app(AffiliateReferralService::class)->resolveAffiliateId($referral !== '' ? $referral : null);
+            $defaultPlan = BillingPlan::query()
+                ->where('is_default', true)
+                ->where('is_active', true)
+                ->first();
 
             // Create the school record
             $newSchool = $school = School::create([
@@ -49,7 +54,8 @@ class SchoolRegistrationController extends Controller
                 'slug'               => $this->uniqueSlug($request->school_name),
                 'email'              => $request->email,
                 'status'             => 'trial',
-                'free_student_limit' => 50,
+                'free_student_limit' => (int) ($defaultPlan->default_free_student_limit ?? 50),
+                'billing_plan_id'    => $defaultPlan ? $defaultPlan->id : null,
                 'affiliate_id'       => $affiliateId,
                 'affiliate_attributed_at' => $affiliateId ? now() : null,
             ]);

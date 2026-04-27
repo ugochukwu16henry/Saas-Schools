@@ -16,6 +16,7 @@ class School extends Model
         'logo',
         'status',
         'free_student_limit',
+        'billing_plan_id',
         'paystack_customer_code',
         'affiliate_id',
         'affiliate_attributed_at',
@@ -41,6 +42,11 @@ class School extends Model
         return $this->hasOne(SchoolSubscription::class);
     }
 
+    public function billingPlan()
+    {
+        return $this->belongsTo(BillingPlan::class, 'billing_plan_id');
+    }
+
     public function affiliate()
     {
         return $this->belongsTo(Affiliate::class);
@@ -57,7 +63,38 @@ class School extends Model
     public function billableStudentCount(): int
     {
         $total = $this->users()->where('user_type', 'student')->count();
-        return max(0, $total - $this->free_student_limit);
+        return max(0, $total - $this->effectiveFreeStudentLimit());
+    }
+
+    public function effectiveFreeStudentLimit(): int
+    {
+        if ($this->free_student_limit !== null) {
+            return (int) $this->free_student_limit;
+        }
+
+        if ($this->billingPlan) {
+            return (int) $this->billingPlan->default_free_student_limit;
+        }
+
+        return 50;
+    }
+
+    public function effectiveMonthlyRate(): int
+    {
+        if ($this->billingPlan) {
+            return (int) $this->billingPlan->monthly_rate_per_student;
+        }
+
+        return 100;
+    }
+
+    public function effectiveOneTimeAddRate(): int
+    {
+        if ($this->billingPlan) {
+            return (int) $this->billingPlan->one_time_add_rate;
+        }
+
+        return 500;
     }
 
     public function isActive(): bool

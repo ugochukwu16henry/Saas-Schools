@@ -11,14 +11,14 @@
                         <div class="text-center mb-3">
                             <i class="icon-credit-card icon-2x text-warning-400 border-warning-400 border-3 rounded-round p-3 mb-3 mt-1"></i>
                             <h5 class="mb-0 text-warning">Subscription Required</h5>
-                            <span class="d-block text-muted">First {{ number_format($school->free_student_limit) }} students are free for life. Billing applies only above that.</span>
+                            <span class="d-block text-muted">Plan: {{ $planName }}. First {{ number_format($freeLimit) }} students are free for life. Billing applies only above that.</span>
                         </div>
 
                         @if ($errors->any())
                         <div class="alert alert-danger alert-styled-left alert-dismissible">
                             <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                             @foreach ($errors->all() as $error)
-                                <div>{{ $error }}</div>
+                            <div>{{ $error }}</div>
                             @endforeach
                         </div>
                         @endif
@@ -32,7 +32,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-7">Free student allocation</div>
-                                <div class="col-5 text-right font-weight-semibold">{{ number_format($school->free_student_limit) }}</div>
+                                <div class="col-5 text-right font-weight-semibold">{{ number_format($freeLimit) }}</div>
                             </div>
                             <div class="row">
                                 <div class="col-7">Billable students</div>
@@ -79,8 +79,8 @@
 
                         <div class="text-center mt-3">
                             <a href="{{ route('logout') }}"
-                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                               class="text-muted small">
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                                class="text-muted small">
                                 Log out
                             </a>
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">

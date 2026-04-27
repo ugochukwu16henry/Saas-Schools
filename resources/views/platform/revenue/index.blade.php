@@ -41,8 +41,8 @@
         <div class="card bg-slate text-white">
             <div class="card-body">
                 <h6 class="font-weight-semibold mb-0">Per-Student Rate</h6>
-                <h2 class="font-weight-bold mt-2 mb-0">₦100</h2>
-                <small class="opacity-75">Per student / month</small>
+                <h2 class="font-weight-bold mt-2 mb-0">{{ $displayRateText }}</h2>
+                <small class="opacity-75">Configured in Billing Plans</small>
             </div>
         </div>
     </div>
@@ -188,7 +188,7 @@
                             </td>
                             <td class="text-center">{{ number_format($sub->billed_students) }}</td>
                             <td class="text-right font-weight-semibold text-teal">
-                                ₦{{ number_format($sub->billed_students * 100) }}
+                                ₦{{ number_format($sub->billed_students * (($sub->school && $sub->school->billingPlan) ? $sub->school->billingPlan->monthly_rate_per_student : 100)) }}
                             </td>
                         </tr>
                         @empty
