@@ -14,7 +14,9 @@ class ClassTypesTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('class_types')->delete();
+        if (DB::table('class_types')->count() > 0) {
+            return;
+        }
 
         $data = [
             ['name' => 'Creche', 'code' => 'C'],
@@ -26,6 +28,5 @@ class ClassTypesTableSeeder extends Seeder
         ];
 
         DB::table('class_types')->insert($data);
-
     }
 }

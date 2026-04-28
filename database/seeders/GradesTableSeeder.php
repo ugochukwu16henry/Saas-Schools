@@ -14,9 +14,9 @@ class GradesTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('grades')->delete();
-
-        $this->createGrades();
+        if (DB::table('grades')->count() === 0) {
+            $this->createGrades();
+        }
     }
 
     protected function createGrades()

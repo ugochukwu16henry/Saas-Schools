@@ -16,9 +16,9 @@ class SubjectsTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('subjects')->delete();
-
-        $this->createSubjects();
+        if (DB::table('subjects')->count() === 0) {
+            $this->createSubjects();
+        }
     }
 
     protected function createSubjects()
@@ -50,7 +50,5 @@ class SubjectsTableSeeder extends Seeder
 
             DB::table('subjects')->insert($data);
         }
-
     }
-
 }

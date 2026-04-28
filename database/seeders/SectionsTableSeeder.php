@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\MyClass;
@@ -15,7 +16,9 @@ class SectionsTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('sections')->delete();
+        if (DB::table('sections')->count() > 0) {
+            return;
+        }
         $c = MyClass::pluck('id')->all();
 
         $data = [

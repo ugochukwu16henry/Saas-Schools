@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -13,7 +14,9 @@ class DormitoriesTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('dormitories')->delete();
+        if (DB::table('dormitories')->count() > 0) {
+            return;
+        }
         $data = [
             ['name' => 'Faith Hostel'],
             ['name' => 'Peace Hostel'],

@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\ClassType;
@@ -15,7 +16,9 @@ class MyClassesTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('my_classes')->delete();
+        if (DB::table('my_classes')->count() > 0) {
+            return;
+        }
         $ct = ClassType::pluck('id')->all();
 
         $data = [
@@ -29,9 +32,8 @@ class MyClassesTableSeeder extends Seeder
             ['name' => 'SSS 1', 'class_type_id' => $ct[5]],
             ['name' => 'SSS 2', 'class_type_id' => $ct[5]],
             ['name' => 'SSS 3', 'class_type_id' => $ct[5]],
-            ];
+        ];
 
         DB::table('my_classes')->insert($data);
-
     }
 }
