@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\ExamRecord;
 use App\Models\Mark;
+use App\Models\MyClass;
 use App\Models\Promotion;
 use App\Models\School;
+use App\Models\Section;
 use App\Models\SchoolSubscription;
 use App\Models\StudentQrToken;
 use App\Models\StudentRecord;
@@ -168,33 +170,37 @@ class StudentTransferService
 
     public function acceptTransfer(StudentTransfer $transfer, User $acceptedBy): StudentTransfer
     {
-        if ($transfer->status !== StudentTransfer::STATUS_PENDING) {
-            throw new RuntimeException('Only pending transfers can be accepted.');
-        }
-
-        if ((int) ($acceptedBy->school_id ?? 0) !== (int) $transfer->to_school_id) {
-            throw new RuntimeException('Only the receiving school can accept this transfer.');
-        }
-
         DB::transaction(function () use ($transfer, $acceptedBy): void {
-            $student = User::withoutGlobalScopes()->findOrFail($transfer->student_id);
-            $fromSchoolId = (int) $transfer->from_school_id;
-            $toSchoolId = (int) $transfer->to_school_id;
+            $lockedTransfer = StudentTransfer::query()->lockForUpdate()->findOrFail($transfer->id);
+
+            if ($lockedTransfer->status !== StudentTransfer::STATUS_PENDING) {
+                throw new RuntimeException('Only pending transfers can be accepted.');
+            }
+
+            if ((int) ($acceptedBy->school_id ?? 0) !== (int) $lockedTransfer->to_school_id) {
+                throw new RuntimeException('Only the receiving school can accept this transfer.');
+            }
+
+            $student = User::withoutGlobalScopes()->lockForUpdate()->findOrFail($lockedTransfer->student_id);
+            $fromSchoolId = (int) $lockedTransfer->from_school_id;
+            $toSchoolId = (int) $lockedTransfer->to_school_id;
 
             if ((int) ($student->school_id ?? 0) !== $fromSchoolId) {
                 throw new RuntimeException('Student school does not match transfer origin.');
             }
+
+            $placement = $this->resolveDestinationPlacement($lockedTransfer, $toSchoolId);
 
             User::withoutGlobalScopes()
                 ->where('id', $student->id)
                 ->update(['school_id' => $toSchoolId]);
 
             $studentRecordUpdate = ['school_id' => $toSchoolId];
-            if ($transfer->from_class_id) {
-                $studentRecordUpdate['my_class_id'] = (int) $transfer->from_class_id;
+            if (!is_null($placement['class_id'])) {
+                $studentRecordUpdate['my_class_id'] = $placement['class_id'];
             }
-            if ($transfer->from_section_id) {
-                $studentRecordUpdate['section_id'] = (int) $transfer->from_section_id;
+            if (!is_null($placement['section_id'])) {
+                $studentRecordUpdate['section_id'] = $placement['section_id'];
             }
 
             StudentRecord::withoutGlobalScopes()
@@ -216,18 +222,20 @@ class StudentTransferService
                 ->where('school_id', $fromSchoolId)
                 ->update(['school_id' => $toSchoolId]);
 
-            $transfer->update([
+            $lockedTransfer->update([
                 'status' => StudentTransfer::STATUS_ACCEPTED,
                 'accepted_by' => (int) $acceptedBy->id,
                 'transferred_at' => now(),
             ]);
 
-            $this->appendTransferHistory($transfer, [
+            $this->appendTransferHistory($lockedTransfer, [
                 'event' => 'accepted',
                 'status' => StudentTransfer::STATUS_ACCEPTED,
                 'actor_id' => (int) $acceptedBy->id,
                 'actor_name' => (string) $acceptedBy->name,
                 'actor_school_id' => (int) ($acceptedBy->school_id ?? 0),
+                'class_id' => $placement['class_id'],
+                'section_id' => $placement['section_id'],
             ]);
 
             StudentQrToken::updateOrCreate(
@@ -263,28 +271,32 @@ class StudentTransferService
 
     public function rejectTransfer(StudentTransfer $transfer, User $acceptedBy, string $reason): StudentTransfer
     {
-        if ($transfer->status !== StudentTransfer::STATUS_PENDING) {
-            throw new RuntimeException('Only pending transfers can be rejected.');
-        }
+        DB::transaction(function () use ($transfer, $acceptedBy, $reason): void {
+            $lockedTransfer = StudentTransfer::query()->lockForUpdate()->findOrFail($transfer->id);
 
-        if ((int) ($acceptedBy->school_id ?? 0) !== (int) $transfer->to_school_id) {
-            throw new RuntimeException('Only the receiving school can reject this transfer.');
-        }
+            if ($lockedTransfer->status !== StudentTransfer::STATUS_PENDING) {
+                throw new RuntimeException('Only pending transfers can be rejected.');
+            }
 
-        $transfer->update([
-            'status' => StudentTransfer::STATUS_REJECTED,
-            'accepted_by' => (int) $acceptedBy->id,
-            'rejected_reason' => $reason,
-        ]);
+            if ((int) ($acceptedBy->school_id ?? 0) !== (int) $lockedTransfer->to_school_id) {
+                throw new RuntimeException('Only the receiving school can reject this transfer.');
+            }
 
-        $this->appendTransferHistory($transfer, [
-            'event' => 'rejected',
-            'status' => StudentTransfer::STATUS_REJECTED,
-            'actor_id' => (int) $acceptedBy->id,
-            'actor_name' => (string) $acceptedBy->name,
-            'actor_school_id' => (int) ($acceptedBy->school_id ?? 0),
-            'reason' => $reason,
-        ]);
+            $lockedTransfer->update([
+                'status' => StudentTransfer::STATUS_REJECTED,
+                'accepted_by' => (int) $acceptedBy->id,
+                'rejected_reason' => $reason,
+            ]);
+
+            $this->appendTransferHistory($lockedTransfer, [
+                'event' => 'rejected',
+                'status' => StudentTransfer::STATUS_REJECTED,
+                'actor_id' => (int) $acceptedBy->id,
+                'actor_name' => (string) $acceptedBy->name,
+                'actor_school_id' => (int) ($acceptedBy->school_id ?? 0),
+                'reason' => $reason,
+            ]);
+        });
 
         $transfer = $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
 
@@ -307,25 +319,29 @@ class StudentTransferService
 
     public function cancelTransfer(StudentTransfer $transfer, User $requestedBy): StudentTransfer
     {
-        if ($transfer->status !== StudentTransfer::STATUS_PENDING) {
-            throw new RuntimeException('Only pending transfers can be cancelled.');
-        }
+        DB::transaction(function () use ($transfer, $requestedBy): void {
+            $lockedTransfer = StudentTransfer::query()->lockForUpdate()->findOrFail($transfer->id);
 
-        if ((int) ($requestedBy->school_id ?? 0) !== (int) $transfer->from_school_id) {
-            throw new RuntimeException('Only the sending school can cancel this transfer.');
-        }
+            if ($lockedTransfer->status !== StudentTransfer::STATUS_PENDING) {
+                throw new RuntimeException('Only pending transfers can be cancelled.');
+            }
 
-        $transfer->update([
-            'status' => StudentTransfer::STATUS_CANCELLED,
-        ]);
+            if ((int) ($requestedBy->school_id ?? 0) !== (int) $lockedTransfer->from_school_id) {
+                throw new RuntimeException('Only the sending school can cancel this transfer.');
+            }
 
-        $this->appendTransferHistory($transfer, [
-            'event' => 'cancelled',
-            'status' => StudentTransfer::STATUS_CANCELLED,
-            'actor_id' => (int) $requestedBy->id,
-            'actor_name' => (string) $requestedBy->name,
-            'actor_school_id' => (int) ($requestedBy->school_id ?? 0),
-        ]);
+            $lockedTransfer->update([
+                'status' => StudentTransfer::STATUS_CANCELLED,
+            ]);
+
+            $this->appendTransferHistory($lockedTransfer, [
+                'event' => 'cancelled',
+                'status' => StudentTransfer::STATUS_CANCELLED,
+                'actor_id' => (int) $requestedBy->id,
+                'actor_name' => (string) $requestedBy->name,
+                'actor_school_id' => (int) ($requestedBy->school_id ?? 0),
+            ]);
+        });
 
         return $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
     }
@@ -440,6 +456,49 @@ class StudentTransferService
                 'name' => (string) $requestedBy->name,
             ],
             'captured_at' => now()->toDateTimeString(),
+        ];
+    }
+
+    private function resolveDestinationPlacement(StudentTransfer $transfer, int $toSchoolId): array
+    {
+        $snapshotAcademic = is_array($transfer->transfer_snapshot)
+            ? ($transfer->transfer_snapshot['academic'] ?? [])
+            : [];
+
+        $className = trim((string) ($snapshotAcademic['class_name'] ?? ''));
+        $sectionName = trim((string) ($snapshotAcademic['section_name'] ?? ''));
+
+        if ($className === '') {
+            return ['class_id' => null, 'section_id' => null];
+        }
+
+        $destinationClass = MyClass::withoutGlobalScopes()
+            ->where('school_id', $toSchoolId)
+            ->where('name', $className)
+            ->first();
+
+        if (!$destinationClass) {
+            throw new RuntimeException('Cannot accept transfer: destination school has no matching class for "' . $className . '".');
+        }
+
+        $destinationSectionId = null;
+        if ($sectionName !== '') {
+            $destinationSection = Section::withoutGlobalScopes()
+                ->where('school_id', $toSchoolId)
+                ->where('my_class_id', $destinationClass->id)
+                ->where('name', $sectionName)
+                ->first();
+
+            if (!$destinationSection) {
+                throw new RuntimeException('Cannot accept transfer: destination school has no matching section "' . $sectionName . '" for class "' . $className . '".');
+            }
+
+            $destinationSectionId = (int) $destinationSection->id;
+        }
+
+        return [
+            'class_id' => (int) $destinationClass->id,
+            'section_id' => $destinationSectionId,
         ];
     }
 }
