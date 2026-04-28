@@ -7,7 +7,6 @@ use App\Models\StudentRecord;
 use App\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class StudentRecordsTableSeeder extends Seeder
 {
@@ -18,7 +17,11 @@ class StudentRecordsTableSeeder extends Seeder
      */
     public function run()
     {
-        if (!Section::query()->exists() || StudentRecord::query()->exists()) {
+        if (Section::count() === 0) {
+            return;
+        }
+
+        if (StudentRecord::count() > 0) {
             return;
         }
 
@@ -55,10 +58,6 @@ class StudentRecordsTableSeeder extends Seeder
     {
         $section = Section::first();
 
-        if (!$section) {
-            return;
-        }
-
         $user = User::query()->firstOrCreate([
             'email' => 'student@student.com',
         ], [
@@ -66,18 +65,14 @@ class StudentRecordsTableSeeder extends Seeder
             'user_type' => 'student',
             'username' => 'student',
             'password' => Hash::make('student'),
-            'email' => 'student@student.com',
-            'code' => strtoupper(Str::random(10)),
-            'remember_token' => Str::random(10),
+            'code' => strtoupper(substr(md5('student@student.com'), 0, 10)),
         ]);
 
-        StudentRecord::query()->firstOrCreate(
-            ['user_id' => $user->id],
-            [
-                'session' => \App\Helpers\Qs::getCurrentSession(),
-                'my_class_id' => $section->my_class_id,
-                'section_id' => $section->id,
-            ]
-        );
+        StudentRecord::query()->firstOrCreate([
+            'user_id' => $user->id,
+        ], [
+            'my_class_id' => $section->my_class_id,
+            'section_id' => $section->id
+        ]);
     }
 }

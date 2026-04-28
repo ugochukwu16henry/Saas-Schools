@@ -79,19 +79,10 @@ class UsersTableSeeder extends Seeder
             ],
         ];
         foreach ($d as $user) {
-            $existingByEmail = DB::table('users')->where('email', $user['email'])->first();
-            $existingByUsername = DB::table('users')->where('username', $user['username'])->first();
-
-            if ($existingByEmail) {
-                DB::table('users')->where('id', $existingByEmail->id)->update($user);
-                continue;
-            }
-
-            if ($existingByUsername) {
-                continue;
-            }
-
-            DB::table('users')->insert($user);
+            DB::table('users')->updateOrInsert(
+                ['email' => $user['email']],
+                $user
+            );
         }
     }
 
