@@ -25,10 +25,14 @@ class StudentTransfer extends Model
         'transfer_note',
         'rejected_reason',
         'transferred_at',
+        'transfer_snapshot',
+        'status_history',
     ];
 
     protected $casts = [
         'transferred_at' => 'datetime',
+        'transfer_snapshot' => 'array',
+        'status_history' => 'array',
     ];
 
     public function student()

@@ -23,6 +23,15 @@ class StudentTransferService
 {
     public function buildTransferDetails(StudentTransfer $transfer, User $viewer): array
     {
+        $transfer = StudentTransfer::query()->findOrFail($transfer->id);
+        $this->appendTransferHistory($transfer, [
+            'event' => 'viewed',
+            'status' => (string) $transfer->status,
+            'actor_id' => (int) $viewer->id,
+            'actor_name' => (string) $viewer->name,
+            'actor_school_id' => (int) ($viewer->school_id ?? 0),
+        ]);
+
         $transfer = StudentTransfer::query()
             ->with([
                 'student',
@@ -81,6 +90,8 @@ class StudentTransferService
             'promotionsCount' => $promotionsCount,
             'recentExamRecords' => $recentExamRecords,
             'recentMarks' => $recentMarks,
+            'transferSnapshot' => $transfer->transfer_snapshot ?: [],
+            'statusHistory' => $transfer->status_history ?: [],
             'transcriptUrl' => route('students.transcript.show', $student->id),
             'transcriptDownloadUrl' => route('students.transcript.download', $student->id),
         ];
@@ -118,6 +129,20 @@ class StudentTransferService
             ->where('user_id', $student->id)
             ->first();
 
+        $parent = $record && $record->my_parent_id
+            ? User::withoutGlobalScopes()->find($record->my_parent_id)
+            : null;
+
+        $snapshot = $this->buildTransferSnapshot($student, $record, $parent, $toSchool, $requestedBy);
+        $initialHistory = [[
+            'event' => 'requested',
+            'status' => StudentTransfer::STATUS_PENDING,
+            'actor_id' => (int) $requestedBy->id,
+            'actor_name' => (string) $requestedBy->name,
+            'actor_school_id' => (int) ($requestedBy->school_id ?? 0),
+            'at' => now()->toDateTimeString(),
+        ]];
+
         $transfer = StudentTransfer::create([
             'student_id' => (int) $student->id,
             'from_school_id' => $fromSchoolId,
@@ -128,6 +153,8 @@ class StudentTransferService
             'from_section_id' => $record ? (int) $record->section_id : null,
             'from_session' => $record ? (string) $record->session : null,
             'transfer_note' => $note,
+            'transfer_snapshot' => $snapshot,
+            'status_history' => $initialHistory,
         ]);
 
         $transfer = $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy']);
@@ -195,6 +222,14 @@ class StudentTransferService
                 'transferred_at' => now(),
             ]);
 
+            $this->appendTransferHistory($transfer, [
+                'event' => 'accepted',
+                'status' => StudentTransfer::STATUS_ACCEPTED,
+                'actor_id' => (int) $acceptedBy->id,
+                'actor_name' => (string) $acceptedBy->name,
+                'actor_school_id' => (int) ($acceptedBy->school_id ?? 0),
+            ]);
+
             StudentQrToken::updateOrCreate(
                 ['student_id' => (int) $student->id],
                 [
@@ -242,6 +277,15 @@ class StudentTransferService
             'rejected_reason' => $reason,
         ]);
 
+        $this->appendTransferHistory($transfer, [
+            'event' => 'rejected',
+            'status' => StudentTransfer::STATUS_REJECTED,
+            'actor_id' => (int) $acceptedBy->id,
+            'actor_name' => (string) $acceptedBy->name,
+            'actor_school_id' => (int) ($acceptedBy->school_id ?? 0),
+            'reason' => $reason,
+        ]);
+
         $transfer = $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
 
         $student = User::withoutGlobalScopes()->find($transfer->student_id);
@@ -273,6 +317,14 @@ class StudentTransferService
 
         $transfer->update([
             'status' => StudentTransfer::STATUS_CANCELLED,
+        ]);
+
+        $this->appendTransferHistory($transfer, [
+            'event' => 'cancelled',
+            'status' => StudentTransfer::STATUS_CANCELLED,
+            'actor_id' => (int) $requestedBy->id,
+            'actor_name' => (string) $requestedBy->name,
+            'actor_school_id' => (int) ($requestedBy->school_id ?? 0),
         ]);
 
         return $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
@@ -320,5 +372,74 @@ class StudentTransferService
                 $user->notify($notification);
             }
         }
+    }
+
+    private function appendTransferHistory(StudentTransfer $transfer, array $entry): void
+    {
+        $history = $transfer->status_history;
+        if (!is_array($history)) {
+            $history = [];
+        }
+
+        $entry['at'] = $entry['at'] ?? now()->toDateTimeString();
+        $history[] = $entry;
+
+        $transfer->status_history = $history;
+        $transfer->save();
+    }
+
+    private function buildTransferSnapshot(User $student, ?StudentRecord $record, ?User $parent, School $toSchool, User $requestedBy): array
+    {
+        $fromSchool = School::query()->find((int) ($student->school_id ?? 0));
+
+        return [
+            'student' => [
+                'id' => (int) $student->id,
+                'name' => (string) $student->name,
+                'code' => (string) $student->code,
+                'email' => (string) ($student->email ?? ''),
+                'phone' => (string) ($student->phone ?? ''),
+                'photo' => (string) ($student->photo ?? ''),
+                'gender' => (string) ($student->gender ?? ''),
+                'dob' => (string) ($student->dob ?? ''),
+                'address' => (string) ($student->address ?? ''),
+            ],
+            'parent' => [
+                'id' => $parent ? (int) $parent->id : null,
+                'name' => (string) ($parent->name ?? ''),
+                'phone' => (string) ($parent->phone ?? ''),
+                'phone2' => (string) ($parent->phone2 ?? ''),
+                'email' => (string) ($parent->email ?? ''),
+            ],
+            'academic' => [
+                'student_record_id' => $record ? (int) $record->id : null,
+                'admission_no' => (string) ($record->adm_no ?? ''),
+                'session' => (string) ($record->session ?? ''),
+                'class_id' => $record ? (int) $record->my_class_id : null,
+                'class_name' => (string) optional($record ? $record->my_class : null)->name,
+                'section_id' => $record ? (int) $record->section_id : null,
+                'section_name' => (string) optional($record ? $record->section : null)->name,
+                'year_admitted' => (string) ($record->year_admitted ?? ''),
+            ],
+            'schools' => [
+                'from' => [
+                    'id' => $fromSchool ? (int) $fromSchool->id : null,
+                    'name' => (string) ($fromSchool->name ?? ''),
+                    'email' => (string) ($fromSchool->email ?? ''),
+                    'phone' => (string) ($fromSchool->phone ?? ''),
+                ],
+                'to' => [
+                    'id' => (int) $toSchool->id,
+                    'name' => (string) $toSchool->name,
+                    'email' => (string) ($toSchool->email ?? ''),
+                    'phone' => (string) ($toSchool->phone ?? ''),
+                ],
+            ],
+            'requested_by' => [
+                'id' => (int) $requestedBy->id,
+                'name' => (string) $requestedBy->name,
+            ],
+            'captured_at' => now()->toDateTimeString(),
+        ];
     }
 }

@@ -56,39 +56,63 @@
             </div>
         </div>
 
+        @php
+        $snapshotStudent = $transferSnapshot['student'] ?? [];
+        $snapshotParent = $transferSnapshot['parent'] ?? [];
+        $snapshotAcademic = $transferSnapshot['academic'] ?? [];
+        @endphp
+
+        @if(!empty($transferSnapshot))
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <div class="border rounded p-3">
+                    <h6 class="font-weight-semibold mb-2">Captured Snapshot (At Request Time)</h6>
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <strong>Student:</strong> {{ $snapshotStudent['name'] ?? 'N/A' }}<br>
+                            <strong>Email:</strong> {{ $snapshotStudent['email'] ?? 'N/A' }}<br>
+                            <strong>Phone:</strong> {{ $snapshotStudent['phone'] ?? 'N/A' }}
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <strong>Parent:</strong> {{ $snapshotParent['name'] ?? 'N/A' }}<br>
+                            <strong>Parent Phone:</strong> {{ $snapshotParent['phone'] ?? 'N/A' }}<br>
+                            <strong>Parent Email:</strong> {{ $snapshotParent['email'] ?? 'N/A' }}
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <strong>Class:</strong> {{ $snapshotAcademic['class_name'] ?? 'N/A' }} {{ $snapshotAcademic['section_name'] ?? '' }}<br>
+                            <strong>Session:</strong> {{ $snapshotAcademic['session'] ?? 'N/A' }}<br>
+                            <strong>Captured At:</strong> {{ $transferSnapshot['captured_at'] ?? 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <div class="row">
             <div class="col-md-12 mb-3">
                 <div class="border rounded p-3">
                     <h6 class="font-weight-semibold mb-2">Transfer Audit Timeline</h6>
                     <ul class="mb-0 pl-3">
+                        @forelse(($statusHistory ?? []) as $event)
                         <li class="mb-1">
-                            <strong>Requested</strong>
-                            by {{ optional(optional($transfer)->requestedBy)->name ?: 'N/A' }}
-                            on {{ optional(optional($transfer)->created_at)->toDateTimeString() ?: 'N/A' }}
-                        </li>
-                        @if(optional($transfer)->status === 'accepted')
-                        <li class="mb-1">
-                            <strong>Accepted</strong>
-                            by {{ optional(optional($transfer)->acceptedBy)->name ?: 'N/A' }}
-                            on {{ optional(optional($transfer)->transferred_at)->toDateTimeString() ?: optional(optional($transfer)->updated_at)->toDateTimeString() ?: 'N/A' }}
-                        </li>
-                        @endif
-                        @if(optional($transfer)->status === 'rejected')
-                        <li class="mb-1">
-                            <strong>Rejected</strong>
-                            by {{ optional(optional($transfer)->acceptedBy)->name ?: 'N/A' }}
-                            on {{ optional(optional($transfer)->updated_at)->toDateTimeString() ?: 'N/A' }}
-                            @if(optional($transfer)->rejected_reason)
-                            with reason: {{ optional($transfer)->rejected_reason }}
+                            <strong>{{ ucfirst($event['event'] ?? 'event') }}</strong>
+                            @if(!empty($event['actor_name']))
+                            by {{ $event['actor_name'] }}
+                            @elseif(!empty($event['actor_id']))
+                            by user #{{ $event['actor_id'] }}
+                            @endif
+                            @if(!empty($event['status']))
+                            ({{ strtoupper($event['status']) }})
+                            @endif
+                            on {{ $event['at'] ?? 'N/A' }}
+                            @if(!empty($event['reason']))
+                            with reason: {{ $event['reason'] }}
                             @endif
                         </li>
-                        @endif
-                        @if(optional($transfer)->status === 'cancelled')
-                        <li>
-                            <strong>Cancelled</strong>
-                            on {{ optional(optional($transfer)->updated_at)->toDateTimeString() ?: 'N/A' }}
-                        </li>
-                        @endif
+                        @empty
+                        <li class="text-muted">No audit history available.</li>
+                        @endforelse
                     </ul>
                 </div>
             </div>
