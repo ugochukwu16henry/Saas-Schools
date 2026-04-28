@@ -95,6 +95,11 @@
         </div>
         @endif
 
+        <div class="mb-3">
+            <a href="{{ route('students.transcript.show', auth()->id()) }}" class="btn btn-outline-primary btn-sm" target="_blank">View Transcript</a>
+            <a href="{{ route('students.transcript.download', auth()->id()) }}" class="btn btn-primary btn-sm" target="_blank">Download Transcript PDF</a>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-striped table-bordered">
                 <thead>

@@ -189,6 +189,8 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
             Route::get('bulk/template', 'StudentBulkController@downloadTemplate')->name('students.bulk.template');
             Route::get('bulk', 'StudentBulkController@create')->name('students.bulk.create');
             Route::post('bulk', 'StudentBulkController@store')->middleware('ability:school.students.bulk_import')->name('students.bulk.store');
+            Route::get('{student}/transcript', 'StudentTranscriptController@show')->name('students.transcript.show');
+            Route::get('{student}/transcript/download', 'StudentTranscriptController@download')->name('students.transcript.download');
 
             Route::get('reset_pass/{st_id}', 'StudentRecordController@reset_pass')->name('st.reset_pass');
             Route::get('graduated', 'StudentRecordController@graduated')->name('students.graduated');
