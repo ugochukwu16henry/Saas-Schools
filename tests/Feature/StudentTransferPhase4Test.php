@@ -145,6 +145,12 @@ class StudentTransferPhase4Test extends TestCase
             'from_section_id' => $fromSection->id,
             'from_session' => '2025/2026',
             'transfer_snapshot' => [
+                'student' => [
+                    'name' => $student->name,
+                ],
+                'parent' => [
+                    'name' => 'Snapshot Parent',
+                ],
                 'academic' => [
                     'class_name' => 'JSS 1',
                     'section_name' => 'Blue',
