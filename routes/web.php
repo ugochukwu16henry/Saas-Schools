@@ -58,11 +58,21 @@ Route::get('/storage/{path}', function ($path) {
     $storageRoot = realpath(storage_path('app/public'));
     $target = storage_path('app/public/' . ltrim((string) $path, '/'));
     $resolved = realpath($target);
+    $isWindows = DIRECTORY_SEPARATOR === '\\';
+
+    $normalize = static function (?string $value) use ($isWindows): string {
+        $normalized = str_replace('\\', '/', (string) $value);
+        return $isWindows ? strtolower($normalized) : $normalized;
+    };
+
+    $rootNorm = rtrim($normalize($storageRoot), '/');
+    $resolvedNorm = $normalize($resolved);
+    $insideStorageRoot = $rootNorm !== '' && $resolvedNorm !== '' && strpos($resolvedNorm, $rootNorm . '/') === 0;
 
     if (
         !$storageRoot ||
         !$resolved ||
-        strpos($resolved, $storageRoot) !== 0 ||
+        !$insideStorageRoot ||
         !is_file($resolved)
     ) {
         abort(404);
@@ -74,6 +84,7 @@ Route::get('/storage/{path}', function ($path) {
 //Route::get('/test', 'TestController@index')->name('test');
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
+Route::get('/verify/student/{token}', 'Public\StudentVerificationController@show')->name('students.verify.public');
 
 // School self-registration (public)
 Route::get('/register/school', 'SchoolRegistrationController@create')->name('school.register');

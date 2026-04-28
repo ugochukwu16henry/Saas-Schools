@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('student_qr_tokens', function (Blueprint $table): void {
             $table->bigIncrements('id');
             $table->unsignedInteger('student_id');
-            $table->unsignedInteger('school_id');
+            $table->unsignedBigInteger('school_id');
             $table->string('token', 64)->unique();
             $table->timestamps();
 

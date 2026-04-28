@@ -80,6 +80,49 @@
 </div>
 @endif
 
+@if(Qs::userIsStudent())
+<div class="card mb-3">
+    <div class="card-header header-elements-inline">
+        <h6 class="card-title font-weight-semibold">My Transfer History</h6>
+    </div>
+    <div class="card-body">
+        @if(!empty($studentQrToken))
+        <div class="alert alert-info alert-styled-left py-2">
+            <span class="font-weight-semibold">Student Verification Link:</span>
+            <a href="{{ route('students.verify.public', $studentQrToken) }}" target="_blank">
+                {{ route('students.verify.public', $studentQrToken) }}
+            </a>
+        </div>
+        @endif
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>From School</th>
+                        <th>To School</th>
+                        <th>Transferred At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse(($studentTransferHistory ?? collect()) as $transfer)
+                    <tr>
+                        <td>{{ optional($transfer->fromSchool)->name }}</td>
+                        <td>{{ optional($transfer->toSchool)->name }}</td>
+                        <td>{{ optional($transfer->transferred_at)->toDateTimeString() }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">No transfer history available.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
 {{--Events Calendar Begins--}}
 <div class="card">
     <div class="card-header header-elements-inline">

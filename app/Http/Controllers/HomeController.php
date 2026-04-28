@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Qs;
+use App\Models\StudentTransfer;
 use App\Repositories\UserRepo;
+use App\Services\StudentQrService;
 
 class HomeController extends Controller
 {
@@ -50,6 +52,19 @@ class HomeController extends Controller
                 'monthly_rate' => $school->effectiveMonthlyRate(),
                 'one_time_rate' => $school->effectiveOneTimeAddRate(),
             ];
+        }
+
+        if (Qs::userIsStudent()) {
+            $student = auth()->user();
+
+            $d['studentTransferHistory'] = StudentTransfer::query()
+                ->with(['fromSchool:id,name', 'toSchool:id,name'])
+                ->where('student_id', (int) $student->id)
+                ->where('status', StudentTransfer::STATUS_ACCEPTED)
+                ->latest('id')
+                ->get();
+
+            $d['studentQrToken'] = app(StudentQrService::class)->ensureTokenForStudent($student)->token;
         }
 
         return view('pages.support_team.dashboard', $d);

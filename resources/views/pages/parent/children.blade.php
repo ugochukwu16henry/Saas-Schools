@@ -2,57 +2,76 @@
 @section('page_title', 'My Children')
 @section('content')
 
-    <div class="card">
-        <div class="card-header header-elements-inline">
-            <h6 class="card-title">My Children</h6>
-            {!! Qs::getPanelOptions() !!}
-        </div>
+<div class="card">
+    <div class="card-header header-elements-inline">
+        <h6 class="card-title">My Children</h6>
+        {!! Qs::getPanelOptions() !!}
+    </div>
 
-        <div class="card-body">
-            <table class="table datatable-button-html5-columns">
-                <thead>
+    <div class="card-body">
+        <table class="table datatable-button-html5-columns">
+            <thead>
                 <tr>
                     <th>S/N</th>
                     <th>Photo</th>
                     <th>Name</th>
                     <th>ADM_No</th>
                     <th>Section</th>
+                    <th>Previous School</th>
+                    <th>Current School</th>
                     <th>Email</th>
+                    <th>Verify</th>
                     <th>Action</th>
                 </tr>
-                </thead>
-                <tbody>
+            </thead>
+            <tbody>
                 @foreach($students as $s)
-                    <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td><img class="rounded-circle" style="height: 40px; width: 40px;" src="{{ $s->user->photo }}" alt="photo"></td>
-                        <td>{{ $s->user->name }}</td>
-                        <td>{{ $s->adm_no }}</td>
-                        <td>{{ $s->my_class->name.' '.$s->section->name }}</td>
-                        <td>{{ $s->user->email }}</td>
-                        <td class="text-center">
-                            <div class="list-icons">
-                                <div class="dropdown">
-                                    <a href="#" class="list-icons-item" data-toggle="dropdown">
-                                        <i class="icon-menu9"></i>
-                                    </a>
+                @php
+                $history = ($transferHistoryByStudent[$s->user->id] ?? collect());
+                $latest = $history->first();
+                $previousSchool = optional(optional($latest)->fromSchool)->name;
+                $currentSchool = optional(optional($latest)->toSchool)->name ?: optional($s->user->school)->name;
+                $qrToken = $qrTokensByStudent[$s->user->id] ?? null;
+                @endphp
+                <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td><img class="rounded-circle" style="height: 40px; width: 40px;" src="{{ $s->user->photo }}" alt="photo"></td>
+                    <td>{{ $s->user->name }}</td>
+                    <td>{{ $s->adm_no }}</td>
+                    <td>{{ $s->my_class->name.' '.$s->section->name }}</td>
+                    <td>{{ $previousSchool ?: 'N/A' }}</td>
+                    <td>{{ $currentSchool ?: 'N/A' }}</td>
+                    <td>{{ $s->user->email }}</td>
+                    <td>
+                        @if($qrToken)
+                        <a target="_blank" href="{{ route('students.verify.public', $qrToken) }}" class="btn btn-sm btn-outline-primary">Verify</a>
+                        @else
+                        <span class="text-muted">N/A</span>
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        <div class="list-icons">
+                            <div class="dropdown">
+                                <a href="#" class="list-icons-item" data-toggle="dropdown">
+                                    <i class="icon-menu9"></i>
+                                </a>
 
-                                    <div class="dropdown-menu dropdown-menu-left">
-                                        <a href="{{ route('students.show', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-eye"></i> View Profile</a>
-                                        <a target="_blank" href="{{ route('marks.year_selector', Qs::hash($s->user->id)) }}" class="dropdown-item"><i class="icon-check"></i> Marksheet</a>
+                                <div class="dropdown-menu dropdown-menu-left">
+                                    <a href="{{ route('students.show', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-eye"></i> View Profile</a>
+                                    <a target="_blank" href="{{ route('marks.year_selector', Qs::hash($s->user->id)) }}" class="dropdown-item"><i class="icon-check"></i> Marksheet</a>
 
-                                    </div>
                                 </div>
                             </div>
-                        </td>
-                    </tr>
+                        </div>
+                    </td>
+                </tr>
                 @endforeach
-                </tbody>
-            </table>
+            </tbody>
+        </table>
 
-        </div>
     </div>
+</div>
 
-    {{--Student List Ends--}}
+{{--Student List Ends--}}
 
 @endsection

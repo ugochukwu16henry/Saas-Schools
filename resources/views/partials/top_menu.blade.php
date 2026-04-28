@@ -4,28 +4,30 @@
             @php
             $schoolName = trim((string) ($currentSchool->name ?? ''));
             if ($schoolName === '') {
-            $schoolName = Qs::getSystemName();
+                $schoolName = Qs::getSystemName();
             }
 
             $schoolLogo = !empty($currentSchool->logo ?? null) ? $currentSchool->logo : Qs::getSetting('logo');
             $schoolLogo = is_string($schoolLogo) ? trim($schoolLogo) : '';
 
             if ($schoolLogo !== '' && !preg_match('/^https?:\/\//i', $schoolLogo)) {
-            if (strpos($schoolLogo, '/storage/') === 0 || strpos($schoolLogo, '/global_assets/') === 0) {
-            $schoolLogo = asset(ltrim($schoolLogo, '/'));
-            } elseif (strpos($schoolLogo, 'storage/') === 0 || strpos($schoolLogo, 'global_assets/') === 0) {
-            $schoolLogo = asset($schoolLogo);
-            } elseif (strpos($schoolLogo, 'uploads/') === 0) {
-            $schoolLogo = asset('storage/' . $schoolLogo);
-            } else {
-            $schoolLogo = asset(ltrim($schoolLogo, '/'));
+                if (strpos($schoolLogo, '/storage/') === 0 || strpos($schoolLogo, '/global_assets/') === 0) {
+                    $schoolLogo = asset(ltrim($schoolLogo, '/'));
+                } elseif (strpos($schoolLogo, 'storage/') === 0 || strpos($schoolLogo, 'global_assets/') === 0) {
+                    $schoolLogo = asset($schoolLogo);
+                } elseif (strpos($schoolLogo, 'uploads/') === 0) {
+                    $schoolLogo = asset('storage/' . $schoolLogo);
+                } else {
+                    $schoolLogo = asset(ltrim($schoolLogo, '/'));
+                }
             }
+
+            if ($schoolLogo === '') {
+                $schoolLogo = asset('global_assets/images/riseflow-logo.png');
             }
             @endphp
-            @if(!empty($schoolLogo))
             <img src="{{ $schoolLogo }}" alt="{{ $schoolName ?: 'School' }}" style="height:40px; width:auto; object-fit:contain; max-width:140px;">
-            @endif
-            <span class="text-white font-weight-semibold" style="line-height:1.1;">{{ $schoolName !== '' ? $schoolName : 'School Dashboard' }}</span>
+            <span class="text-white font-weight-semibold" style="line-height:1.1; white-space:nowrap;">{{ $schoolName !== '' ? $schoolName : 'School Dashboard' }}</span>
         </a>
     </div>
 
