@@ -9,20 +9,14 @@ use App\Models\StudentRecord;
 use App\Models\StudentTransfer;
 use App\Services\StudentTransferService;
 use App\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 use Tests\TestCase;
 
 class StudentTransferPhase4Test extends TestCase
 {
-    use RefreshDatabase;
-
-    protected function getEnvironmentSetUp($app)
-    {
-        $app['config']->set('database.default', 'sqlite');
-        $app['config']->set('database.connections.sqlite.database', ':memory:');
-    }
+    use DatabaseTransactions;
 
     public function testAuditExportReturnsCsvForInboxScope()
     {
@@ -147,13 +141,15 @@ class StudentTransferPhase4Test extends TestCase
 
     private function createSchool(string $name, string $slug, string $email): School
     {
-        return School::query()->create([
-            'name' => $name,
-            'slug' => $slug,
-            'email' => $email,
-            'status' => 'active',
-            'free_student_limit' => 50,
-        ]);
+        return School::withoutEvents(function () use ($name, $slug, $email) {
+            return School::query()->create([
+                'name' => $name,
+                'slug' => $slug,
+                'email' => $email,
+                'status' => 'active',
+                'free_student_limit' => 50,
+            ]);
+        });
     }
 
     private function createUser(string $name, string $email, string $type, int $schoolId): User
