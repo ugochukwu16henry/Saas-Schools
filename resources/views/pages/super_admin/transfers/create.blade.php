@@ -42,56 +42,52 @@
             </div>
         </form>
     </div>
-    @php
-    $transferSearchEndpoint = \Illuminate\Support\Facades\Route::has('transfers.search_school')
-    ? route('transfers.search_school')
-    : url('transfers/search-school');
-    @endphp
-
 </div>
 
-var searchEndpoint = {!! json_encode($transferSearchEndpoint) !!};
-(function() {
-var searchEndpoint = @json(\Illuminate\ Support\ Facades\ Route::has('transfers.search_school') ? route('transfers.search_school') : url('transfers/search-school'));
-var searchInput = document.getElementById('school-search');
-var select = document.getElementById('to-school-id');
-var timer = null;
+<script>
+    (function() {
+        var searchEndpoint = "{{ url('transfers/search-school') }}";
 
-function setOptions(rows) {
-select.innerHTML = '<option value="">Search and choose receiving school</option>';
-rows.forEach(function(school) {
-var opt = document.createElement('option');
-opt.value = school.id;
-opt.textContent = school.name + ' (' + (school.unique_code || 'N/A') + ') - ' + (school.email || '');
-select.appendChild(opt);
-});
-}
+        var searchInput = document.getElementById('school-search');
+        var select = document.getElementById('to-school-id');
+        var timer = null;
 
-searchInput.addEventListener('input', function() {
-var q = searchInput.value.trim();
-clearTimeout(timer);
+        function setOptions(rows) {
+            select.innerHTML = '<option value="">Search and choose receiving school</option>';
+            rows.forEach(function(school) {
+                var opt = document.createElement('option');
+                opt.value = school.id;
+                opt.textContent = school.name + ' (' + (school.unique_code || 'N/A') + ') - ' + (school.email || '');
+                select.appendChild(opt);
+            });
+        }
 
-if (q.length < 2) {
-    setOptions([]);
-    return;
-    }
+        searchInput.addEventListener('input', function() {
+            var q = searchInput.value.trim();
+            clearTimeout(timer);
 
-    timer=setTimeout(function() {
-    fetch(searchEndpoint + '?q=' + encodeURIComponent(q), {
-    headers: { 'X-Requested-With' : 'XMLHttpRequest'
-    }
-    })
-    .then(function(r) {
-    return r.json();
-    })
-    .then(function(rows) {
-    setOptions(rows || []);
-    })
-    .catch(function() {
-    setOptions([]);
-    });
-    }, 250);
-    });
+            if (q.length < 2) {
+                setOptions([]);
+                return;
+            }
+
+            timer = setTimeout(function() {
+                fetch(searchEndpoint + '?q=' + encodeURIComponent(q), {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(function(r) {
+                        return r.json();
+                    })
+                    .then(function(rows) {
+                        setOptions(rows || []);
+                    })
+                    .catch(function() {
+                        setOptions([]);
+                    });
+            }, 250);
+        });
     })();
-    </script>
-    @endsection
+</script>
+@endsection
