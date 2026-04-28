@@ -10,7 +10,11 @@ use App\Models\SchoolSubscription;
 use App\Models\StudentQrToken;
 use App\Models\StudentRecord;
 use App\Models\StudentTransfer;
+use App\Notifications\StudentTransferAcceptedNotification;
+use App\Notifications\StudentTransferRejectedNotification;
+use App\Notifications\StudentTransferRequestedNotification;
 use App\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -49,7 +53,7 @@ class StudentTransferService
             ->where('user_id', $student->id)
             ->first();
 
-        return StudentTransfer::create([
+        $transfer = StudentTransfer::create([
             'student_id' => (int) $student->id,
             'from_school_id' => $fromSchoolId,
             'to_school_id' => (int) $toSchool->id,
@@ -60,6 +64,14 @@ class StudentTransferService
             'from_session' => $record ? (string) $record->session : null,
             'transfer_note' => $note,
         ]);
+
+        $transfer = $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy']);
+        $this->notifyUsers(
+            $this->schoolAdmins((int) $toSchool->id),
+            new StudentTransferRequestedNotification($transfer)
+        );
+
+        return $transfer;
     }
 
     public function acceptTransfer(StudentTransfer $transfer, User $acceptedBy): StudentTransfer
@@ -122,7 +134,23 @@ class StudentTransferService
             $this->syncBilledStudents($toSchoolId);
         });
 
-        return $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
+        $transfer = $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
+
+        $student = User::withoutGlobalScopes()->find($transfer->student_id);
+        $studentRecord = StudentRecord::withoutGlobalScopes()->where('user_id', $transfer->student_id)->first();
+        $parent = $studentRecord && $studentRecord->my_parent_id
+            ? User::withoutGlobalScopes()->find($studentRecord->my_parent_id)
+            : null;
+
+        $recipients = $this->schoolAdmins((int) $transfer->from_school_id)
+            ->merge($student ? collect([$student]) : collect())
+            ->merge($parent ? collect([$parent]) : collect())
+            ->unique('id')
+            ->values();
+
+        $this->notifyUsers($recipients, new StudentTransferAcceptedNotification($transfer));
+
+        return $transfer;
     }
 
     public function rejectTransfer(StudentTransfer $transfer, User $acceptedBy, string $reason): StudentTransfer
@@ -141,7 +169,23 @@ class StudentTransferService
             'rejected_reason' => $reason,
         ]);
 
-        return $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
+        $transfer = $transfer->fresh(['student', 'fromSchool', 'toSchool', 'requestedBy', 'acceptedBy']);
+
+        $student = User::withoutGlobalScopes()->find($transfer->student_id);
+        $studentRecord = StudentRecord::withoutGlobalScopes()->where('user_id', $transfer->student_id)->first();
+        $parent = $studentRecord && $studentRecord->my_parent_id
+            ? User::withoutGlobalScopes()->find($studentRecord->my_parent_id)
+            : null;
+
+        $recipients = $this->schoolAdmins((int) $transfer->from_school_id)
+            ->merge($student ? collect([$student]) : collect())
+            ->merge($parent ? collect([$parent]) : collect())
+            ->unique('id')
+            ->values();
+
+        $this->notifyUsers($recipients, new StudentTransferRejectedNotification($transfer));
+
+        return $transfer;
     }
 
     public function cancelTransfer(StudentTransfer $transfer, User $requestedBy): StudentTransfer
@@ -186,5 +230,22 @@ class StudentTransferService
         } while ($exists);
 
         return $token;
+    }
+
+    private function schoolAdmins(int $schoolId): Collection
+    {
+        return User::withoutGlobalScopes()
+            ->where('school_id', $schoolId)
+            ->whereIn('user_type', ['super_admin', 'admin'])
+            ->get();
+    }
+
+    private function notifyUsers(Collection $users, $notification): void
+    {
+        foreach ($users as $user) {
+            if ($user && $user->email) {
+                $user->notify($notification);
+            }
+        }
     }
 }

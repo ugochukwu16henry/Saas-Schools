@@ -20,9 +20,18 @@
                 <p class="mb-1"><strong>Student Code:</strong> {{ $student->code }}</p>
                 <p class="mb-1"><strong>Admission Number:</strong> {{ optional($record)->adm_no ?: 'N/A' }}</p>
                 <p class="mb-1"><strong>Current School:</strong> {{ optional($student->school)->name ?: 'N/A' }}</p>
+                <p class="mb-1"><strong>School Email:</strong> {{ optional($student->school)->email ?: 'N/A' }}</p>
+                <p class="mb-1"><strong>School Phone:</strong> {{ optional($student->school)->phone ?: 'N/A' }}</p>
                 <p class="mb-0"><strong>Verification URL:</strong> <a href="{{ $verifyUrl }}" target="_blank">{{ $verifyUrl }}</a></p>
             </div>
         </div>
+
+        @if(optional($student->school)->logo)
+        <div class="mt-3">
+            <strong>Current School Logo:</strong><br>
+            <img src="{{ $student->school->logo }}" alt="Current school logo" style="height:48px; max-width:220px;" class="mt-1">
+        </div>
+        @endif
     </div>
 </div>
 
@@ -36,19 +45,34 @@
                 <tr>
                     <th>From School</th>
                     <th>To School</th>
+                    <th>School Contacts</th>
                     <th>Transfer Date</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($transfers as $transfer)
                 <tr>
-                    <td>{{ optional($transfer->fromSchool)->name ?: 'N/A' }}</td>
-                    <td>{{ optional($transfer->toSchool)->name ?: 'N/A' }}</td>
+                    <td>
+                        @if(optional($transfer->fromSchool)->logo)
+                        <img src="{{ $transfer->fromSchool->logo }}" alt="From school logo" style="height:30px; max-width:100px;" class="mb-1"><br>
+                        @endif
+                        {{ optional($transfer->fromSchool)->name ?: 'N/A' }}
+                    </td>
+                    <td>
+                        @if(optional($transfer->toSchool)->logo)
+                        <img src="{{ $transfer->toSchool->logo }}" alt="To school logo" style="height:30px; max-width:100px;" class="mb-1"><br>
+                        @endif
+                        {{ optional($transfer->toSchool)->name ?: 'N/A' }}
+                    </td>
+                    <td>
+                        <div><strong>From:</strong> {{ optional($transfer->fromSchool)->email ?: 'N/A' }} | {{ optional($transfer->fromSchool)->phone ?: 'N/A' }}</div>
+                        <div><strong>To:</strong> {{ optional($transfer->toSchool)->email ?: 'N/A' }} | {{ optional($transfer->toSchool)->phone ?: 'N/A' }}</div>
+                    </td>
                     <td>{{ optional($transfer->transferred_at)->toDateTimeString() ?: optional($transfer->updated_at)->toDateTimeString() }}</td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="3" class="text-center text-muted">No transfer history found.</td>
+                    <td colspan="4" class="text-center text-muted">No transfer history found.</td>
                 </tr>
                 @endforelse
             </tbody>

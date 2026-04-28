@@ -70,12 +70,11 @@
             }
 
             timer = setTimeout(function() {
-                fetch('{{ route('
-                        transfers.search_school ') }}?q=' + encodeURIComponent(q), {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        })
+                fetch('{{ route('transfers.search_school') }}?q=' + encodeURIComponent(q), {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
                     .then(function(r) {
                         return r.json();
                     })

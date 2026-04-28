@@ -1,10 +1,13 @@
-<div class="navbar navbar-expand-md navbar-dark">
-    <div class="navbar-brand mt-1 mr-5">
-        <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center" style="gap:8px; text-decoration:none;">
+<div class="navbar navbar-expand-md navbar-dark" style="background-color:#273246;">
+    <div class="navbar-brand mt-1 mr-4" style="min-width:0; max-width:60vw;">
+        <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center" style="gap:8px; text-decoration:none; min-width:0;">
             @php
             $schoolName = trim((string) ($currentSchool->name ?? ''));
             if ($schoolName === '') {
                 $schoolName = Qs::getSystemName();
+            }
+            if ($schoolName === '') {
+                $schoolName = config('app.name', 'School Dashboard');
             }
 
             $schoolLogo = !empty($currentSchool->logo ?? null) ? $currentSchool->logo : Qs::getSetting('logo');
@@ -27,7 +30,7 @@
             }
             @endphp
             <img src="{{ $schoolLogo }}" alt="{{ $schoolName ?: 'School' }}" style="height:40px; width:auto; object-fit:contain; max-width:140px;">
-            <span class="text-white font-weight-semibold" style="line-height:1.1; white-space:nowrap;">{{ $schoolName !== '' ? $schoolName : 'School Dashboard' }}</span>
+            <span class="font-weight-semibold" style="line-height:1.1; color:#ffffff !important; display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:42vw;">{{ $schoolName }}</span>
         </a>
     </div>
 
