@@ -8,10 +8,24 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('student_transfers', function (Blueprint $table): void {
-            $table->json('transfer_snapshot')->nullable()->after('transferred_at');
-            $table->json('status_history')->nullable()->after('transfer_snapshot');
-        });
+        if (!Schema::hasTable('student_transfers')) {
+            return;
+        }
+
+        $hasTransferSnapshot = Schema::hasColumn('student_transfers', 'transfer_snapshot');
+        $hasStatusHistory = Schema::hasColumn('student_transfers', 'status_history');
+
+        if (!$hasTransferSnapshot || !$hasStatusHistory) {
+            Schema::table('student_transfers', function (Blueprint $table) use ($hasTransferSnapshot, $hasStatusHistory): void {
+                if (!$hasTransferSnapshot) {
+                    $table->json('transfer_snapshot')->nullable()->after('transferred_at');
+                }
+
+                if (!$hasStatusHistory) {
+                    $table->json('status_history')->nullable()->after('transfer_snapshot');
+                }
+            });
+        }
 
         DB::table('student_transfers')
             ->orderBy('id')
@@ -61,8 +75,23 @@ return new class extends Migration {
 
     public function down(): void
     {
+        if (!Schema::hasTable('student_transfers')) {
+            return;
+        }
+
+        $hasTransferSnapshot = Schema::hasColumn('student_transfers', 'transfer_snapshot');
+        $hasStatusHistory = Schema::hasColumn('student_transfers', 'status_history');
+        if (!$hasTransferSnapshot && !$hasStatusHistory) {
+            return;
+        }
+
         Schema::table('student_transfers', function (Blueprint $table): void {
-            $table->dropColumn(['transfer_snapshot', 'status_history']);
+            if (Schema::hasColumn('student_transfers', 'transfer_snapshot')) {
+                $table->dropColumn('transfer_snapshot');
+            }
+            if (Schema::hasColumn('student_transfers', 'status_history')) {
+                $table->dropColumn('status_history');
+            }
         });
     }
 };

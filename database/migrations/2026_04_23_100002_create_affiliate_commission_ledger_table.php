@@ -8,6 +8,10 @@ class CreateAffiliateCommissionLedgerTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('affiliate_commission_ledger')) {
+            return;
+        }
+
         Schema::create('affiliate_commission_ledger', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('affiliate_id');

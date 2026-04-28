@@ -8,6 +8,10 @@ class CreatePlatformNotificationsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('platform_notifications')) {
+            return;
+        }
+
         Schema::create('platform_notifications', function (Blueprint $table) {
             $table->id();
             $table->string('type', 100)->index();

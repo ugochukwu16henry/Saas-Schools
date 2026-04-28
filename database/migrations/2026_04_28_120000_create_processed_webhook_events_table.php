@@ -8,6 +8,10 @@ class CreateProcessedWebhookEventsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('processed_webhook_events')) {
+            return;
+        }
+
         Schema::create('processed_webhook_events', function (Blueprint $table) {
             $table->id();
             $table->string('provider', 40)->index();

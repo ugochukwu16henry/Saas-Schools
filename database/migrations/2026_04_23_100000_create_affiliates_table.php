@@ -8,6 +8,10 @@ class CreateAffiliatesTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('affiliates')) {
+            return;
+        }
+
         Schema::create('affiliates', function (Blueprint $table) {
             $table->id();
             $table->string('name');

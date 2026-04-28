@@ -8,6 +8,10 @@ class CreateSchoolAuditLogsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('school_audit_logs')) {
+            return;
+        }
+
         Schema::create('school_audit_logs', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('school_id');

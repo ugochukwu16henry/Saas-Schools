@@ -8,6 +8,10 @@ class CreatePlatformWebhookEndpointsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('platform_webhook_endpoints')) {
+            return;
+        }
+
         Schema::create('platform_webhook_endpoints', function (Blueprint $table) {
             $table->id();
             $table->string('name');

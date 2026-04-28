@@ -8,6 +8,10 @@ class CreateAffiliatePayoutsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('affiliate_payouts')) {
+            return;
+        }
+
         Schema::create('affiliate_payouts', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('affiliate_id')->index();

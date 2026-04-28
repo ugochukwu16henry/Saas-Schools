@@ -9,6 +9,10 @@ class CreateBillingPlansTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('billing_plans')) {
+            return;
+        }
+
         Schema::create('billing_plans', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name', 120)->unique();

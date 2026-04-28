@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('transfer_notification_events')) {
+            return;
+        }
+
         Schema::create('transfer_notification_events', function (Blueprint $table): void {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('transfer_id')->nullable();

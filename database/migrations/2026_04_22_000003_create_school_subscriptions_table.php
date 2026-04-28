@@ -8,6 +8,10 @@ class CreateSchoolSubscriptionsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('school_subscriptions')) {
+            return;
+        }
+
         Schema::create('school_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('school_id');

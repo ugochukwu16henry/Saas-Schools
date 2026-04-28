@@ -14,6 +14,10 @@ class CreatePlatformAdminsTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('platform_admins')) {
+            return;
+        }
+
         Schema::create('platform_admins', function (Blueprint $table) {
             $table->id();
             $table->string('name');

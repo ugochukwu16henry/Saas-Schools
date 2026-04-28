@@ -8,6 +8,10 @@ class CreatePlatformWebhookDeliveriesTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('platform_webhook_deliveries')) {
+            return;
+        }
+
         Schema::create('platform_webhook_deliveries', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('endpoint_id')->index();
