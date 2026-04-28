@@ -43,7 +43,7 @@ class UsersTableSeeder extends Seeder
                 'email' => 'admin@admin.com',
                 'password' => $password,
                 'user_type' => 'admin',
-                'username' => 'admin',
+                'username' => 'admin_kora',
                 'code' => strtoupper(Str::random(10)),
                 'remember_token' => Str::random(10),
             ],
@@ -79,10 +79,19 @@ class UsersTableSeeder extends Seeder
             ],
         ];
         foreach ($d as $user) {
-            DB::table('users')->updateOrInsert(
-                ['email' => $user['email']],
-                $user
-            );
+            $existingByEmail = DB::table('users')->where('email', $user['email'])->first();
+            $existingByUsername = DB::table('users')->where('username', $user['username'])->first();
+
+            if ($existingByEmail) {
+                DB::table('users')->where('id', $existingByEmail->id)->update($user);
+                continue;
+            }
+
+            if ($existingByUsername) {
+                continue;
+            }
+
+            DB::table('users')->insert($user);
         }
     }
 
