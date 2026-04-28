@@ -14,7 +14,7 @@ class CreateAiRequestsTable extends Migration
     public function up()
     {
         if (Schema::hasTable('ai_requests')) {
-            Schema::drop('ai_requests');
+            return;
         }
 
         Schema::create('ai_requests', function (Blueprint $table) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Billing;
 
 use App\Http\Controllers\Controller;
+use App\Models\ProcessedWebhookEvent;
 use App\Models\School;
 use App\Models\SchoolSubscription;
 use App\Services\AffiliateCommissionService;
@@ -144,6 +145,12 @@ class PaystackController extends Controller
 
         $event = $request->input('event');
         $data  = (array) $request->input('data', []);
+        $eventKey = $this->buildWebhookEventKey($event, $data);
+
+        if (! $this->markEventAsProcessing($eventKey, $event)) {
+            Log::info('Paystack webhook duplicate skipped.', ['event' => $event, 'event_key' => $eventKey]);
+            return response()->json(['status' => 'duplicate_ignored']);
+        }
 
         match ($event) {
             'charge.success'           => $this->handleChargeSuccess($data),
@@ -176,6 +183,12 @@ class PaystackController extends Controller
      */
     private function applySuccessfulPaymentFromPaystack(array $data): void
     {
+        $reference = (string) data_get($data, 'reference', '');
+        if ($reference !== '' && ! $this->markEventAsProcessing('paystack:charge-success:' . $reference, 'charge.success')) {
+            Log::info('Paystack successful payment duplicate skipped.', ['reference' => $reference]);
+            return;
+        }
+
         $school = $this->resolveSchoolFromPaystackPayload($data);
         if (! $school) {
             return;
@@ -212,6 +225,13 @@ class PaystackController extends Controller
 
     private function applyFailedPaymentFromPaystack(array $data, ?string $defaultReason = null): void
     {
+        $reference = (string) data_get($data, 'reference', '');
+        $eventKey = $reference !== '' ? 'paystack:charge-failed:' . $reference : '';
+        if ($eventKey !== '' && ! $this->markEventAsProcessing($eventKey, 'charge.failed')) {
+            Log::info('Paystack failed payment duplicate skipped.', ['reference' => $reference]);
+            return;
+        }
+
         $school = $this->resolveSchoolFromPaystackPayload($data);
         if (! $school) {
             Log::warning('Paystack payment failure received without resolvable school.', [
@@ -321,6 +341,46 @@ class PaystackController extends Controller
     private function paymentFailureGraceDays(): int
     {
         return max(1, (int) config('paystack.payment_failure_grace_days', 7));
+    }
+
+    private function buildWebhookEventKey(?string $event, array $data): string
+    {
+        $reference = (string) data_get($data, 'reference', '');
+        if ($reference !== '') {
+            return 'paystack:webhook:' . ($event ?: 'unknown') . ':' . $reference;
+        }
+
+        $id = (string) data_get($data, 'id', '');
+        if ($id !== '') {
+            return 'paystack:webhook:' . ($event ?: 'unknown') . ':' . $id;
+        }
+
+        return 'paystack:webhook:' . ($event ?: 'unknown') . ':' . sha1(json_encode($data));
+    }
+
+    private function markEventAsProcessing(string $eventKey, ?string $eventType = null): bool
+    {
+        if ($eventKey === '') {
+            return true;
+        }
+
+        $existing = ProcessedWebhookEvent::query()
+            ->where('provider', 'paystack')
+            ->where('event_key', $eventKey)
+            ->first();
+
+        if ($existing) {
+            return false;
+        }
+
+        ProcessedWebhookEvent::query()->create([
+            'provider' => 'paystack',
+            'event_key' => $eventKey,
+            'event_type' => $eventType,
+            'processed_at' => now(),
+        ]);
+
+        return true;
     }
 
     /**

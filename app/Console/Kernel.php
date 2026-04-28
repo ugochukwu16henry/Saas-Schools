@@ -25,10 +25,16 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // Enforce payment-failure grace windows and auto-suspend delinquent schools.
-        $schedule->command('billing:enforce-dunning')->hourly();
+        $schedule->command('billing:enforce-dunning')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer();
 
         // Expire overdue trials and suspend schools that never converted.
-        $schedule->command('billing:expire-trials')->hourly();
+        $schedule->command('billing:expire-trials')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer();
 
         if ((bool) config('platform.digest.enabled', false)) {
             $frequency = strtolower((string) config('platform.digest.frequency', 'daily'));
@@ -47,9 +53,15 @@ class Kernel extends ConsoleKernel
                 $weeklyDay = strtolower((string) config('platform.digest.weekly_day', 'monday'));
                 $dayIndex = $dayMap[$weeklyDay] ?? 1;
 
-                $schedule->command('platform:send-digest --period=auto')->weeklyOn($dayIndex, $time);
+                $schedule->command('platform:send-digest --period=auto')
+                    ->weeklyOn($dayIndex, $time)
+                    ->withoutOverlapping()
+                    ->onOneServer();
             } else {
-                $schedule->command('platform:send-digest --period=auto')->dailyAt($time);
+                $schedule->command('platform:send-digest --period=auto')
+                    ->dailyAt($time)
+                    ->withoutOverlapping()
+                    ->onOneServer();
             }
         }
     }

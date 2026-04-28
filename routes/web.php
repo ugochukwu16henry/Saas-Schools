@@ -167,6 +167,7 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
     Route::group(['prefix' => 'ai'], function () {
         Route::get('/announcement-draft', 'Ai\AnnouncementPageController@index')->name('ai.announcement.page');
         Route::post('/announcement-draft', 'Ai\AnnouncementController@generate')->name('ai.announcement.generate');
+        Route::post('/ops-summary', 'Ai\OpsCopilotController@summarize')->name('ai.ops.summary');
     });
 
     /*************** Support Team *****************/

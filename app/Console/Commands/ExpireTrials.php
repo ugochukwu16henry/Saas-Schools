@@ -52,7 +52,7 @@ class ExpireTrials extends Command
                     $trialEndsAt = Carbon::parse($sub->trial_ends_at);
                     $daysRemaining = $now->diffInDays($trialEndsAt, false);
 
-                    if ($daysRemaining === 7 && !$sub->trial_warning_7d_sent_at) {
+                    if ($daysRemaining >= 6 && $daysRemaining <= 7 && !$sub->trial_warning_7d_sent_at) {
                         if (! $dryRun) {
                             $notifier->sendTrialExpiringWarning($school, $sub, 7);
                             $sub->trial_warning_7d_sent_at = now();
@@ -71,7 +71,7 @@ class ExpireTrials extends Command
                         continue;
                     }
 
-                    if ($daysRemaining <= 1 && !$sub->trial_warning_1d_sent_at) {
+                    if ($daysRemaining >= 0 && $daysRemaining <= 1 && !$sub->trial_warning_1d_sent_at) {
                         if (! $dryRun) {
                             $notifier->sendTrialExpiringWarning($school, $sub, max(0, $daysRemaining));
                             $sub->trial_warning_1d_sent_at = now();
@@ -137,6 +137,13 @@ class ExpireTrials extends Command
             $expired,
             $dryRun ? 'yes' : 'no'
         ));
+
+        Log::info('automation.metrics.trial_expiry', [
+            'processed' => $processed,
+            'warnings' => $warnings,
+            'expired' => $expired,
+            'dry_run' => $dryRun,
+        ]);
 
         return self::SUCCESS;
     }

@@ -219,6 +219,8 @@ class UserController extends Controller
 
     protected function generateRoleUsername(string $role, ?string $empDate = null): string
     {
-        return Qs::getAppCode() . '/' . strtoupper($role) . '/' . date('Y/m', strtotime((string) $empDate)) . '/' . mt_rand(1000, 9999);
+        $dateSegment = $empDate ? date('Y/m', strtotime($empDate)) : now()->format('Y/m');
+
+        return Qs::getAppCode() . '/' . strtoupper($role) . '/' . $dateSegment . '/' . mt_rand(1000, 9999);
     }
 }

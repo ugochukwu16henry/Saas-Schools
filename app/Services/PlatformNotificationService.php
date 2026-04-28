@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\DispatchPlatformWebhookJob;
 use App\Models\PlatformNotification;
 use App\Models\School;
 use App\User;
@@ -18,7 +19,7 @@ class PlatformNotificationService
             'payload' => $payload,
         ]);
 
-        app(OutboundWebhookService::class)->dispatch($this->mapEventType($type), $notification);
+        DispatchPlatformWebhookJob::dispatch($this->mapEventType($type), $notification->id);
 
         return $notification;
     }

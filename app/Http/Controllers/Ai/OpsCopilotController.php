@@ -6,23 +6,23 @@ use App\Helpers\Qs;
 use App\Http\Controllers\Controller;
 use App\Services\Ai\AiRouter;
 use App\Services\Ai\AiUsageLogger;
-use App\Services\Ai\PromptBuilders\AnnouncementPromptBuilder;
+use App\Services\Ai\PromptBuilders\OpsSummaryPromptBuilder;
 use App\Services\Ai\Security\ResponseGuard;
 use App\Services\Ai\StructuredOutput;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class AnnouncementController extends Controller
+class OpsCopilotController extends Controller
 {
     private AiRouter $router;
-    private AnnouncementPromptBuilder $promptBuilder;
+    private OpsSummaryPromptBuilder $promptBuilder;
     private ResponseGuard $responseGuard;
     private AiUsageLogger $usageLogger;
     private StructuredOutput $structuredOutput;
 
     public function __construct(
         AiRouter $router,
-        AnnouncementPromptBuilder $promptBuilder,
+        OpsSummaryPromptBuilder $promptBuilder,
         ResponseGuard $responseGuard,
         AiUsageLogger $usageLogger,
         StructuredOutput $structuredOutput
@@ -34,62 +34,47 @@ class AnnouncementController extends Controller
         $this->structuredOutput = $structuredOutput;
     }
 
-    public function generate(Request $request)
+    public function summarize(Request $request)
     {
         if (! Qs::userIsTeamSA()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $data = $request->validate([
-            'audience' => 'required|string|max:120',
-            'tone' => 'required|string|max:80',
-            'language' => 'required|string|max:80',
-            'context' => 'nullable|string|max:1200',
-            'key_points' => 'required|string|max:2000',
+            'title' => 'required|string|max:160',
+            'notes' => 'required|string|max:3000',
         ]);
 
         $messages = $this->promptBuilder->build($data);
-        $featureConfig = (array) config('ai.features.announcement_draft', []);
+        $featureConfig = (array) config('ai.features.ops_summary', []);
         $school = app()->bound('currentSchool') ? app('currentSchool') : null;
         $user = Auth::user();
 
-        $reqLog = $this->usageLogger->createRequest('announcement_draft', $messages, $school, $user, [
+        $reqLog = $this->usageLogger->createRequest('ops_summary', $messages, $school, $user, [
             'provider' => data_get($featureConfig, 'provider'),
             'model' => data_get($featureConfig, 'model'),
         ]);
 
         $start = microtime(true);
         try {
-            $result = $this->router->generate('announcement_draft', $messages, $featureConfig);
+            $result = $this->router->generate('ops_summary', $messages, $featureConfig);
             $content = $this->responseGuard->guard((string) data_get($result, 'content', ''));
-            $decoded = $this->structuredOutput->decodeObject($content);
-            if (is_array($decoded) && $this->structuredOutput->hasRequiredKeys($decoded, ['title', 'body', 'action_items', 'sms_version'])) {
-                $title = trim((string) data_get($decoded, 'title', ''));
-                $body = trim((string) data_get($decoded, 'body', ''));
-                $items = data_get($decoded, 'action_items', []);
-                $sms = trim((string) data_get($decoded, 'sms_version', ''));
-                $itemText = is_array($items) ? implode("\n- ", array_map('strval', $items)) : (string) $items;
-                $content = trim("Title: {$title}\n\nBody: {$body}\n\nAction items:\n- {$itemText}\n\nSMS version: {$sms}");
-            }
+            $decoded = $this->structuredOutput->decodeObject($content) ?? [];
             $latency = (int) round((microtime(true) - $start) * 1000);
-
             $this->usageLogger->markSuccess($reqLog, $result, $latency);
 
             return response()->json([
-                'draft' => $content,
+                'summary' => (string) data_get($decoded, 'summary', $content),
+                'risks' => (array) data_get($decoded, 'risks', []),
+                'next_steps' => (array) data_get($decoded, 'next_steps', []),
                 'provider' => data_get($result, 'provider'),
                 'model' => data_get($result, 'model'),
-                'fallback_from' => data_get($result, 'fallback_from'),
                 'request_id' => $reqLog->id,
-                'message' => 'Draft generated. Review before publishing.',
             ]);
         } catch (\Throwable $e) {
             $latency = (int) round((microtime(true) - $start) * 1000);
             $this->usageLogger->markFailed($reqLog, $e, $latency);
-
-            return response()->json([
-                'message' => 'Could not generate draft right now. Please try again.',
-            ], 422);
+            return response()->json(['message' => 'Could not generate ops summary right now.'], 422);
         }
     }
 }

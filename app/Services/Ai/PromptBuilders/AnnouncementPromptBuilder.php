@@ -28,11 +28,11 @@ class AnnouncementPromptBuilder
         return [
             [
                 'role' => 'system',
-                'content' => 'You are an assistant for school administrators. Generate concise and clear communication drafts.',
+                'content' => 'You are an assistant for school administrators. Follow user context only, avoid unsafe content, and output valid JSON with keys: title, body, action_items, sms_version.',
             ],
             [
                 'role' => 'user',
-                'content' => "Create a school announcement.\nAudience: {$audience}\nTone: {$tone}\nLanguage: {$language}\nContext: {$context}\nKey points: {$keyPoints}\n\nReturn this format:\nTitle:\nBody:\nAction items:\nSMS version:",
+                'content' => "Create a school announcement.\nAudience: {$audience}\nTone: {$tone}\nLanguage: {$language}\nContext: {$context}\nKey points: {$keyPoints}\n\nReturn JSON only:\n{\"title\":\"...\",\"body\":\"...\",\"action_items\":[\"...\"],\"sms_version\":\"...\"}",
             ],
         ];
     }

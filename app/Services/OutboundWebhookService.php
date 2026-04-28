@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\DeliverPlatformWebhookJob;
 use App\Models\PlatformNotification;
 use App\Models\PlatformWebhookDelivery;
 use App\Models\PlatformWebhookEndpoint;
@@ -32,11 +33,11 @@ class OutboundWebhookService
                 continue;
             }
 
-            $this->deliver($endpoint, $event, $payload, $notification->id);
+            DeliverPlatformWebhookJob::dispatch($endpoint->id, $event, $payload, $notification->id);
         }
     }
 
-    private function deliver(PlatformWebhookEndpoint $endpoint, string $event, array $payload, int $notificationId): void
+    public function deliver(PlatformWebhookEndpoint $endpoint, string $event, array $payload, int $notificationId, int $attempt = 1): void
     {
         $deliveryRequestId = (string) Str::uuid();
         $body = [
@@ -54,7 +55,7 @@ class OutboundWebhookService
             'event_type' => $event,
             'platform_notification_id' => $notificationId,
             'request_id' => $deliveryRequestId,
-            'attempt' => 1,
+            'attempt' => $attempt,
         ]);
 
         try {
@@ -77,7 +78,16 @@ class OutboundWebhookService
             $endpoint->forceFill([
                 'last_success_at' => $response->successful() ? now() : $endpoint->last_success_at,
                 'last_failure_at' => $response->successful() ? $endpoint->last_failure_at : now(),
+                'consecutive_failures' => $response->successful() ? 0 : ((int) $endpoint->consecutive_failures + 1),
             ])->save();
+
+            Log::info('automation.metrics.outbound_webhook', [
+                'endpoint_id' => $endpoint->id,
+                'event' => $event,
+                'attempt' => $attempt,
+                'success' => $response->successful(),
+                'status' => $response->status(),
+            ]);
         } catch (\Throwable $e) {
             $delivery->forceFill([
                 'response_status' => null,
@@ -88,12 +98,15 @@ class OutboundWebhookService
 
             $endpoint->forceFill([
                 'last_failure_at' => now(),
+                'consecutive_failures' => (int) $endpoint->consecutive_failures + 1,
+                'is_active' => ((int) $endpoint->consecutive_failures + 1) >= (int) config('platform.webhooks.auto_disable_after_failures', 10) ? false : $endpoint->is_active,
             ])->save();
 
             Log::warning('Outbound webhook delivery failed.', [
                 'endpoint_id' => $endpoint->id,
                 'event' => $event,
                 'url' => $endpoint->url,
+                'attempt' => $attempt,
                 'error' => $e->getMessage(),
             ]);
         }

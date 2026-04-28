@@ -3,8 +3,9 @@
 namespace App\Services\Ai\Providers;
 
 use App\Services\Ai\Contracts\AiClientInterface;
+use App\Services\Ai\Exceptions\AiProviderException;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
+use Illuminate\Support\Str;
 
 class OssAiClient implements AiClientInterface
 {
@@ -16,7 +17,7 @@ class OssAiClient implements AiClientInterface
         $model = (string) ($options['model'] ?? data_get($provider, 'model', 'llama-3.1-8b-instruct'));
 
         if (! $baseUrl) {
-            throw new RuntimeException('OSS_AI_BASE_URL is not configured.');
+            throw new AiProviderException('OSS_AI_BASE_URL is not configured.', 'oss', 0, 'config_error', false);
         }
 
         $request = Http::timeout((int) config('ai.timeout_seconds', 20))
@@ -27,15 +28,25 @@ class OssAiClient implements AiClientInterface
             $request = $request->withToken($apiKey);
         }
 
-        $response = $request->post($baseUrl.'/chat/completions', [
+        $payload = [
             'model' => $model,
             'messages' => $messages,
             'temperature' => (float) ($options['temperature'] ?? 0.4),
             'max_tokens' => (int) ($options['max_tokens'] ?? 500),
-        ]);
+        ];
+
+        if (($options['response_format'] ?? '') === 'json_object') {
+            $payload['response_format'] = ['type' => 'json_object'];
+        }
+
+        $response = $request->post($baseUrl.'/chat/completions', $payload);
 
         if (! $response->successful()) {
-            throw new RuntimeException('OSS AI request failed: '.$response->status());
+            $status = $response->status();
+            $errorType = (string) data_get($response->json(), 'error.type', 'provider_http_error');
+            $message = (string) data_get($response->json(), 'error.message', 'OSS AI request failed');
+            $retryable = $status === 429 || ($status >= 500 && $status <= 599);
+            throw new AiProviderException('OSS AI request failed: '.$message, 'oss', $status, $errorType, $retryable);
         }
 
         $data = $response->json();
@@ -47,6 +58,7 @@ class OssAiClient implements AiClientInterface
             'content' => $content,
             'tokens_input' => (int) data_get($data, 'usage.prompt_tokens', 0),
             'tokens_output' => (int) data_get($data, 'usage.completion_tokens', 0),
+            'trace_id' => (string) Str::uuid(),
             'raw' => $data,
         ];
     }

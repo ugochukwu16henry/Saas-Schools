@@ -189,6 +189,7 @@ class DashboardController extends Controller
                 'Created At',
             ]);
 
+            /** @var School $school */
             foreach ($schools as $school) {
                 $subscription = $school->subscription;
                 $riskLabel = $this->determineRiskLabel($school);
@@ -251,6 +252,7 @@ class DashboardController extends Controller
                 'Address',
             ]);
 
+            /** @var School $school */
             foreach ($schools as $school) {
                 $subscription = $school->subscription;
 
@@ -430,7 +432,7 @@ class DashboardController extends Controller
         }
     }
 
-    private function determineRiskLabel($school): string
+    private function determineRiskLabel(School $school): string
     {
         $sub = $school->subscription;
         $failureCount = (int) ($sub->payment_failures_count ?? 0);

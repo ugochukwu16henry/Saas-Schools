@@ -120,6 +120,13 @@ class EnforceDunning extends Command
             $dryRun ? 'yes' : 'no'
         ));
 
+        Log::info('automation.metrics.dunning', [
+            'processed' => $processed,
+            'warnings' => $warnings,
+            'suspended' => $suspended,
+            'dry_run' => $dryRun,
+        ]);
+
         return self::SUCCESS;
     }
 }

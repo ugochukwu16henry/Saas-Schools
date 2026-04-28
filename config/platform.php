@@ -9,4 +9,7 @@ return [
         'recipients' => env('PLATFORM_DIGEST_RECIPIENTS', ''), // comma-separated emails
         'include_platform_admins' => env('PLATFORM_DIGEST_INCLUDE_PLATFORM_ADMINS', true),
     ],
+    'webhooks' => [
+        'auto_disable_after_failures' => (int) env('PLATFORM_WEBHOOK_DISABLE_AFTER_FAILURES', 10),
+    ],
 ];

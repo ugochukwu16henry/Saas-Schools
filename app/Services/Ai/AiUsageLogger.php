@@ -22,7 +22,7 @@ class AiUsageLogger
             'provider' => data_get($meta, 'provider'),
             'model' => data_get($meta, 'model'),
             'status' => 'queued',
-            'prompt_hash' => hash('sha256', json_encode($messages)),
+            'prompt_hash' => hash('sha256', json_encode($this->redactedMessages($messages))),
         ]);
     }
 
@@ -46,6 +46,7 @@ class AiUsageLogger
             'provider' => data_get($result, 'provider'),
             'model' => data_get($result, 'model'),
             'fallback_from' => data_get($result, 'fallback_from'),
+            'trace_id' => data_get($result, 'trace_id'),
         ]);
 
         return $request;
@@ -78,5 +79,20 @@ class AiUsageLogger
             'event' => $event,
             'payload' => $payload,
         ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $messages
+     * @return array<int, array<string, mixed>>
+     */
+    private function redactedMessages(array $messages): array
+    {
+        return array_map(function (array $message): array {
+            $content = (string) ($message['content'] ?? '');
+            $content = preg_replace('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', '[redacted-email]', $content) ?: $content;
+            $content = preg_replace('/\+?\d[\d\-\s()]{7,}\d/', '[redacted-phone]', $content) ?: $content;
+            $message['content'] = $content;
+            return $message;
+        }, $messages);
     }
 }
