@@ -42,50 +42,56 @@
             </div>
         </form>
     </div>
+    @php
+    $transferSearchEndpoint = \Illuminate\Support\Facades\Route::has('transfers.search_school')
+    ? route('transfers.search_school')
+    : url('transfers/search-school');
+    @endphp
+
 </div>
 
-<script>
-    (function() {
-        var searchInput = document.getElementById('school-search');
-        var select = document.getElementById('to-school-id');
-        var timer = null;
+var searchEndpoint = {!! json_encode($transferSearchEndpoint) !!};
+(function() {
+var searchEndpoint = @json(\Illuminate\ Support\ Facades\ Route::has('transfers.search_school') ? route('transfers.search_school') : url('transfers/search-school'));
+var searchInput = document.getElementById('school-search');
+var select = document.getElementById('to-school-id');
+var timer = null;
 
-        function setOptions(rows) {
-            select.innerHTML = '<option value="">Search and choose receiving school</option>';
-            rows.forEach(function(school) {
-                var opt = document.createElement('option');
-                opt.value = school.id;
-                opt.textContent = school.name + ' (' + (school.unique_code || 'N/A') + ') - ' + (school.email || '');
-                select.appendChild(opt);
-            });
-        }
+function setOptions(rows) {
+select.innerHTML = '<option value="">Search and choose receiving school</option>';
+rows.forEach(function(school) {
+var opt = document.createElement('option');
+opt.value = school.id;
+opt.textContent = school.name + ' (' + (school.unique_code || 'N/A') + ') - ' + (school.email || '');
+select.appendChild(opt);
+});
+}
 
-        searchInput.addEventListener('input', function() {
-            var q = searchInput.value.trim();
-            clearTimeout(timer);
+searchInput.addEventListener('input', function() {
+var q = searchInput.value.trim();
+clearTimeout(timer);
 
-            if (q.length < 2) {
-                setOptions([]);
-                return;
-            }
+if (q.length < 2) {
+    setOptions([]);
+    return;
+    }
 
-            timer = setTimeout(function() {
-                fetch('{{ route('transfers.search_school') }}?q=' + encodeURIComponent(q), {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(function(r) {
-                        return r.json();
-                    })
-                    .then(function(rows) {
-                        setOptions(rows || []);
-                    })
-                    .catch(function() {
-                        setOptions([]);
-                    });
-            }, 250);
-        });
+    timer=setTimeout(function() {
+    fetch(searchEndpoint + '?q=' + encodeURIComponent(q), {
+    headers: { 'X-Requested-With' : 'XMLHttpRequest'
+    }
+    })
+    .then(function(r) {
+    return r.json();
+    })
+    .then(function(rows) {
+    setOptions(rows || []);
+    })
+    .catch(function() {
+    setOptions([]);
+    });
+    }, 250);
+    });
     })();
-</script>
-@endsection
+    </script>
+    @endsection
