@@ -179,7 +179,7 @@ class StudentRecordController extends Controller
             $photo = $req->file('photo');
             $f = Qs::getFileMetaData($photo);
             $f['name'] = 'photo.' . $f['ext'];
-            $f['path'] = $photo->storeAs(Qs::getUploadPath('student') . $sr->user->code, $f['name']);
+            $f['path'] = $photo->storeAs(Qs::getUploadPath('student') . $sr->user->code, $f['name'], 'public');
             $d['photo'] = asset('storage/' . $f['path']);
         }
 
@@ -204,7 +204,7 @@ class StudentRecordController extends Controller
 
         $sr = $this->student->getRecord(['user_id' => $st_id])->first();
         $path = Qs::getUploadPath('student') . $sr->user->code;
-        Storage::exists($path) ? Storage::deleteDirectory($path) : false;
+        Storage::disk('public')->exists($path) ? Storage::disk('public')->deleteDirectory($path) : false;
         $this->user->delete($sr->user->id);
 
         return back()->with('flash_success', __('msg.del_ok'));

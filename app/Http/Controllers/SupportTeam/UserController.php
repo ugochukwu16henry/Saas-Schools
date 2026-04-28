@@ -91,7 +91,7 @@ class UserController extends Controller
             $photo = $req->file('photo');
             $f = Qs::getFileMetaData($photo);
             $f['name'] = 'photo.' . $f['ext'];
-            $f['path'] = $photo->storeAs(Qs::getUploadPath($user_type) . $data['code'], $f['name']);
+            $f['path'] = $photo->storeAs(Qs::getUploadPath($user_type) . $data['code'], $f['name'], 'public');
             $data['photo'] = asset('storage/' . $f['path']);
         }
 
@@ -142,7 +142,7 @@ class UserController extends Controller
             $photo = $req->file('photo');
             $f = Qs::getFileMetaData($photo);
             $f['name'] = 'photo.' . $f['ext'];
-            $f['path'] = $photo->storeAs(Qs::getUploadPath($user_type) . $user->code, $f['name']);
+            $f['path'] = $photo->storeAs(Qs::getUploadPath($user_type) . $user->code, $f['name'], 'public');
             $data['photo'] = asset('storage/' . $f['path']);
         }
 
@@ -191,7 +191,7 @@ class UserController extends Controller
         }
 
         $path = Qs::getUploadPath($user->user_type) . $user->code;
-        Storage::exists($path) ? Storage::deleteDirectory($path) : true;
+        Storage::disk('public')->exists($path) ? Storage::disk('public')->deleteDirectory($path) : true;
         $this->user->delete($user->id);
 
         return back()->with('flash_success', __('msg.del_ok'));
