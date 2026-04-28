@@ -16,7 +16,9 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
-    protected $user, $loc, $my_class;
+    protected UserRepo $user;
+    protected LocationRepo $loc;
+    protected MyClassRepo $my_class;
 
     public function __construct(UserRepo $user, LocationRepo $loc, MyClassRepo $my_class)
     {
