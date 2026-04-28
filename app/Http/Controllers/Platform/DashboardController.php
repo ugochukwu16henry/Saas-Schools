@@ -596,7 +596,7 @@ class DashboardController extends Controller
         ]);
 
         $before = ['free_student_limit' => (int) $school->free_student_limit];
-        $school->update(['free_student_limit' => $request->integer('free_student_limit')]);
+        $school->update(['free_student_limit' => (int) $request->input('free_student_limit')]);
         app(SchoolAuditLogService::class)->logDiff(
             $school,
             'school_plan_updated',
@@ -615,7 +615,7 @@ class DashboardController extends Controller
             'billing_plan_id' => ['required', 'integer', 'exists:billing_plans,id'],
         ]);
 
-        $plan = BillingPlan::query()->findOrFail($request->integer('billing_plan_id'));
+        $plan = BillingPlan::query()->findOrFail((int) $request->input('billing_plan_id'));
         $before = ['billing_plan_id' => (int) ($school->billing_plan_id ?? 0)];
 
         $school->update(['billing_plan_id' => $plan->id]);

@@ -128,7 +128,7 @@ class AffiliateAdminController extends Controller
             ->sum('amount_ngn');
 
         $available = max(0, $totalEarned - $totalPaid - $pendingPayouts);
-        $amount = (int) $request->integer('amount_ngn');
+        $amount = (int) $request->input('amount_ngn');
 
         if ($amount > $available) {
             return back()->withErrors([
