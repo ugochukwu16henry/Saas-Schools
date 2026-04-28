@@ -198,6 +198,18 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
             Route::get('reset_pass/{id}', 'UserController@reset_pass')->name('users.reset_pass');
         });
 
+        /*************** Student Transfers (Super Admin) *****************/
+        Route::group(['prefix' => 'transfers', 'middleware' => 'super_admin'], function () {
+            Route::get('/', 'StudentTransferController@outbox')->name('transfers.outbox');
+            Route::get('inbox', 'StudentTransferController@inbox')->name('transfers.inbox');
+            Route::get('create', 'StudentTransferController@create')->name('transfers.create');
+            Route::get('search-school', 'StudentTransferController@searchSchool')->name('transfers.search_school');
+            Route::post('/', 'StudentTransferController@store')->name('transfers.store');
+            Route::patch('{transfer}/accept', 'StudentTransferController@accept')->name('transfers.accept');
+            Route::patch('{transfer}/reject', 'StudentTransferController@reject')->name('transfers.reject');
+            Route::delete('{transfer}', 'StudentTransferController@cancel')->name('transfers.cancel');
+        });
+
         /*************** TimeTables *****************/
         Route::group(['prefix' => 'timetables'], function () {
             Route::get('/', 'TimeTableController@index')->name('tt.index');

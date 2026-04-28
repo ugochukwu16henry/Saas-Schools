@@ -10,6 +10,7 @@ class School extends Model
     protected $fillable = [
         'name',
         'slug',
+        'unique_code',
         'email',
         'phone',
         'address',
@@ -27,9 +28,36 @@ class School extends Model
         'onboarding_completed_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $school): void {
+            if (!$school->unique_code) {
+                $school->unique_code = static::generateUniqueCode();
+            }
+        });
+    }
+
     public function users()
     {
         return $this->hasMany(\App\User::class);
+    }
+
+    public function scopeSearchable($query, string $term)
+    {
+        $search = trim($term);
+
+        return $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('unique_code', 'like', "%{$search}%");
+        });
+    }
+
+    public static function findByUniqueCode(string $code): ?self
+    {
+        return static::query()
+            ->where('unique_code', strtoupper(trim($code)))
+            ->first();
     }
 
     public function settings()
@@ -147,5 +175,15 @@ class School extends Model
         }
 
         return asset($clean);
+    }
+
+    private static function generateUniqueCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+            $exists = static::query()->where('unique_code', $code)->exists();
+        } while ($exists);
+
+        return $code;
     }
 }
