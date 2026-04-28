@@ -78,11 +78,20 @@ class UserController extends Controller
         // Format: timestamp(8) + random(8) = e.g., 17456789ABCDEF12
         $data['code'] = strtoupper(dechex(intval(microtime(true) * 10000)) . Str::random(8));
 
-        $user_is_staff = in_array($user_type, Qs::getStaff());
-        $user_is_teamSA = in_array($user_type, Qs::getTeamSA());
+        $user_is_staff = in_array($user_type, Qs::getStaff(), true);
+        $user_is_teamSA = in_array($user_type, Qs::getTeamSA(), true);
+        $user_is_parent = $user_type === 'parent';
 
-        $staff_id = Qs::getAppCode() . '/STAFF/' . date('Y/m', strtotime($req->emp_date)) . '/' . mt_rand(1000, 9999);
-        $data['username'] = $uname = ($user_is_teamSA) ? $req->username : $staff_id;
+        $staff_id = $this->generateRoleUsername('STAFF', $req->emp_date);
+        $parent_id = $this->generateRoleUsername('PARENT', $req->emp_date);
+
+        if ($user_is_teamSA) {
+            $data['username'] = $uname = $req->username;
+        } elseif ($user_is_parent) {
+            $data['username'] = $uname = $parent_id;
+        } else {
+            $data['username'] = $uname = $staff_id;
+        }
 
         $pass = $req->password ?: $user_type;
         $data['password'] = Hash::make($pass);
@@ -125,15 +134,20 @@ class UserController extends Controller
         $user = $this->user->find($id);
 
         $user_type = $user->user_type;
-        $user_is_staff = in_array($user_type, Qs::getStaff());
-        $user_is_teamSA = in_array($user_type, Qs::getTeamSA());
+        $user_is_staff = in_array($user_type, Qs::getStaff(), true);
+        $user_is_teamSA = in_array($user_type, Qs::getTeamSA(), true);
+        $user_is_parent = $user_type === 'parent';
 
         $data = $req->except(Qs::getStaffRecord());
         $data['name'] = ucwords($req->name);
         $data['user_type'] = $user_type;
 
-        if ($user_is_staff && !$user_is_teamSA) {
-            $data['username'] = Qs::getAppCode() . '/STAFF/' . date('Y/m', strtotime($req->emp_date)) . '/' . mt_rand(1000, 9999);
+        if ($user_is_parent) {
+            $data['username'] = Str::contains((string) $user->username, '/STAFF/')
+                ? str_replace('/STAFF/', '/PARENT/', (string) $user->username)
+                : $this->generateRoleUsername('PARENT', $req->emp_date);
+        } elseif ($user_is_staff && !$user_is_teamSA) {
+            $data['username'] = $this->generateRoleUsername('STAFF', $req->emp_date);
         } else {
             $data['username'] = $user->username;
         }
@@ -201,5 +215,10 @@ class UserController extends Controller
     {
         $subjects = $this->my_class->findSubjectByTeacher($user->id);
         return ($subjects->count() > 0) ? true : false;
+    }
+
+    protected function generateRoleUsername(string $role, ?string $empDate = null): string
+    {
+        return Qs::getAppCode() . '/' . strtoupper($role) . '/' . date('Y/m', strtotime((string) $empDate)) . '/' . mt_rand(1000, 9999);
     }
 }
