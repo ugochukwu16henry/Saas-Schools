@@ -237,6 +237,7 @@
             @if(optional($transfer)->status === 'pending' && $isReceivingSchool)
             <form method="post" action="{{ route('transfers.accept', $transfer) }}" class="mr-2 mb-2">
                 @csrf @method('PATCH')
+                <input type="hidden" name="acceptance_checklist" id="acceptance-checklist" value="0">
                 <button type="submit" id="accept-transfer-btn" class="btn btn-success btn-sm" disabled>Accept Transfer</button>
             </form>
 
@@ -262,6 +263,7 @@
     (function() {
         var checks = Array.prototype.slice.call(document.querySelectorAll('.transfer-verify-check'));
         var acceptBtn = document.getElementById('accept-transfer-btn');
+        var checklistField = document.getElementById('acceptance-checklist');
 
         if (!checks.length || !acceptBtn) {
             return;
@@ -272,6 +274,9 @@
                 return check.checked;
             });
             acceptBtn.disabled = !allChecked;
+        }
+        if (checklistField) {
+            checklistField.value = allChecked ? '1' : '0';
         }
 
         checks.forEach(function(check) {

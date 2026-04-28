@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Qs;
+use App\Models\TransferNotificationEvent;
 use App\Models\StudentTransfer;
 use App\Repositories\UserRepo;
 use App\Services\StudentQrService;
@@ -128,6 +129,95 @@ class HomeController extends Controller
                     ->where('updated_at', '>=', now()->subDays(30))
                     ->count(),
                 'avg_acceptance_hours_last_30' => $avgAcceptanceHours,
+            ];
+
+            $transferKpiWindow = (string) request()->query('transfer_kpi_window', '30');
+            if (!in_array($transferKpiWindow, ['7', '30', '90'], true)) {
+                $transferKpiWindow = '30';
+            }
+
+            $transferKpiScope = (string) request()->query('transfer_kpi_scope', 'incoming');
+            if (!in_array($transferKpiScope, ['incoming', 'outgoing', 'all'], true)) {
+                $transferKpiScope = 'incoming';
+            }
+
+            $kpiDays = (int) $transferKpiWindow;
+            $kpiCutoff = now()->subDays($kpiDays);
+
+            $statusCountsQuery = StudentTransfer::query()
+                ->where('created_at', '>=', $kpiCutoff)
+                ->when($transferKpiScope === 'incoming', function ($q) use ($school) {
+                    $q->where('to_school_id', (int) $school->id);
+                })
+                ->when($transferKpiScope === 'outgoing', function ($q) use ($school) {
+                    $q->where('from_school_id', (int) $school->id);
+                });
+
+            $statusCountsRows = (clone $statusCountsQuery)
+                ->selectRaw('status, COUNT(*) as total')
+                ->groupBy('status')
+                ->get();
+
+            $statusCounts = [
+                StudentTransfer::STATUS_PENDING => 0,
+                StudentTransfer::STATUS_ACCEPTED => 0,
+                StudentTransfer::STATUS_REJECTED => 0,
+                StudentTransfer::STATUS_CANCELLED => 0,
+            ];
+
+            foreach ($statusCountsRows as $row) {
+                $status = (string) ($row->status ?? '');
+                if (array_key_exists($status, $statusCounts)) {
+                    $statusCounts[$status] = (int) ($row->total ?? 0);
+                }
+            }
+
+            $trendRows = (clone $statusCountsQuery)
+                ->selectRaw('DATE(created_at) as day, status, COUNT(*) as total')
+                ->groupBy('day', 'status')
+                ->orderBy('day')
+                ->get();
+
+            $trendMap = [];
+            foreach ($trendRows as $row) {
+                $day = (string) ($row->day ?? '');
+                $status = (string) ($row->status ?? '');
+                if ($day === '' || !array_key_exists($status, $statusCounts)) {
+                    continue;
+                }
+
+                if (!isset($trendMap[$day])) {
+                    $trendMap[$day] = [
+                        StudentTransfer::STATUS_PENDING => 0,
+                        StudentTransfer::STATUS_ACCEPTED => 0,
+                        StudentTransfer::STATUS_REJECTED => 0,
+                        StudentTransfer::STATUS_CANCELLED => 0,
+                    ];
+                }
+
+                $trendMap[$day][$status] = (int) ($row->total ?? 0);
+            }
+
+            ksort($trendMap);
+
+            $notificationFailures = TransferNotificationEvent::query()
+                ->where('school_id', (int) $school->id)
+                ->where('status', 'failed')
+                ->whereNull('resolved_at')
+                ->latest('id')
+                ->limit(10)
+                ->get();
+
+            $d['transferKpiDrilldown'] = [
+                'window' => $transferKpiWindow,
+                'scope' => $transferKpiScope,
+                'status_counts' => $statusCounts,
+                'trend' => $trendMap,
+            ];
+
+            $d['transferNotificationVisibility'] = [
+                'pending_failures_count' => (int) $notificationFailures->count(),
+                'recent_failures' => $notificationFailures,
             ];
 
             $receivedTransferQrTokens = [];

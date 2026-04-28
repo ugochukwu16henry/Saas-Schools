@@ -53,10 +53,15 @@
                             <a href="{{ route('transfers.show', $transfer) }}" class="btn btn-primary btn-sm mb-1">View Details</a>
 
                             @if($transfer->status === 'pending')
+                            @if(config('transfers.policies.require_acceptance_checklist', true))
+                            <a href="{{ route('transfers.show', $transfer) }}" class="btn btn-success btn-sm">Open Details to Accept</a>
+                            @else
                             <form method="post" action="{{ route('transfers.accept', $transfer) }}" style="display:inline-block;">
                                 @csrf @method('PATCH')
+                                <input type="hidden" name="acceptance_checklist" value="1">
                                 <button type="submit" class="btn btn-success btn-sm">Accept</button>
                             </form>
+                            @endif
 
                             <form method="post" action="{{ route('transfers.reject', $transfer) }}" style="display:inline-block;" class="ml-2">
                                 @csrf @method('PATCH')

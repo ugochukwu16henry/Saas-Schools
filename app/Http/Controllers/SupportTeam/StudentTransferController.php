@@ -228,8 +228,17 @@ class StudentTransferController extends Controller
         ]);
     }
 
-    public function accept(StudentTransfer $transfer)
+    public function accept(Request $request, StudentTransfer $transfer)
     {
+        if ((bool) config('transfers.policies.require_acceptance_checklist', true)) {
+            $request->validate([
+                'acceptance_checklist' => ['required', 'in:1'],
+            ], [
+                'acceptance_checklist.required' => 'Policy requires checklist completion before acceptance.',
+                'acceptance_checklist.in' => 'Policy requires checklist completion before acceptance.',
+            ]);
+        }
+
         try {
             $this->transferService->acceptTransfer($transfer, auth()->user());
         } catch (RuntimeException $e) {

@@ -9,7 +9,9 @@ use App\Models\StudentRecord;
 use App\Models\StudentTransfer;
 use App\Services\StudentTransferService;
 use App\User;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 use Tests\TestCase;
@@ -17,6 +19,32 @@ use Tests\TestCase;
 class StudentTransferPhase4Test extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (!Schema::hasTable('student_transfers')) {
+            Schema::create('student_transfers', function (Blueprint $table): void {
+                $table->bigIncrements('id');
+                $table->unsignedInteger('student_id');
+                $table->unsignedBigInteger('from_school_id');
+                $table->unsignedBigInteger('to_school_id');
+                $table->unsignedInteger('requested_by');
+                $table->unsignedInteger('accepted_by')->nullable();
+                $table->enum('status', ['pending', 'accepted', 'rejected', 'cancelled'])->default('pending');
+                $table->unsignedInteger('from_class_id')->nullable();
+                $table->unsignedInteger('from_section_id')->nullable();
+                $table->string('from_session')->nullable();
+                $table->text('transfer_note')->nullable();
+                $table->text('rejected_reason')->nullable();
+                $table->dateTime('transferred_at')->nullable();
+                $table->json('transfer_snapshot')->nullable();
+                $table->json('status_history')->nullable();
+                $table->timestamps();
+            });
+        }
+    }
 
     public function testAuditExportReturnsCsvForInboxScope()
     {
@@ -40,7 +68,7 @@ class StudentTransferPhase4Test extends TestCase
             'section_id' => $fromSection->id,
             'my_parent_id' => $parent->id,
             'session' => '2025/2026',
-            'adm_no' => 'ADM-001',
+            'adm_no' => 'ADM-' . strtoupper(substr(uniqid('', true), -6)),
         ]);
 
         $requester = $this->createUser('Sender Admin', 'sender-admin@example.test', 'super_admin', $fromSchool->id);
@@ -69,6 +97,7 @@ class StudentTransferPhase4Test extends TestCase
             ],
         ]);
 
+        $this->bindSchool($toSchool);
         $this->withoutMiddleware();
         $response = $this->actingAs($receiver)->get(route('transfers.audit.export', ['scope' => 'inbox']));
 
@@ -100,7 +129,7 @@ class StudentTransferPhase4Test extends TestCase
             'my_class_id' => $fromClass->id,
             'section_id' => $fromSection->id,
             'session' => '2025/2026',
-            'adm_no' => 'ADM-200',
+            'adm_no' => 'ADM-' . strtoupper(substr(uniqid('', true), -6)),
         ]);
 
         $requestedBy = $this->createUser('Requested By', 'requested-by@example.test', 'super_admin', $fromSchool->id);
@@ -141,11 +170,13 @@ class StudentTransferPhase4Test extends TestCase
 
     private function createSchool(string $name, string $slug, string $email): School
     {
-        return School::withoutEvents(function () use ($name, $slug, $email) {
+        $suffix = strtolower(substr(uniqid('', true), -8));
+
+        return School::withoutEvents(function () use ($name, $slug, $email, $suffix) {
             return School::query()->create([
                 'name' => $name,
-                'slug' => $slug,
-                'email' => $email,
+                'slug' => $slug . '-' . $suffix,
+                'email' => preg_replace('/@/', '+' . $suffix . '@', $email, 1),
                 'status' => 'active',
                 'free_student_limit' => 50,
             ]);
@@ -154,10 +185,13 @@ class StudentTransferPhase4Test extends TestCase
 
     private function createUser(string $name, string $email, string $type, int $schoolId): User
     {
+        $suffix = strtolower(substr(uniqid('', true), -8));
+        $uniqueEmail = preg_replace('/@/', '+' . $suffix . '@', $email, 1);
+
         return User::query()->create([
             'name' => $name,
-            'email' => $email,
-            'code' => strtoupper(substr($type, 0, 3)) . '-' . substr(md5($email), 0, 7),
+            'email' => $uniqueEmail,
+            'code' => strtoupper(substr($type, 0, 3)) . '-' . substr(md5($uniqueEmail), 0, 7),
             'username' => null,
             'user_type' => $type,
             'password' => Hash::make('secret12345'),

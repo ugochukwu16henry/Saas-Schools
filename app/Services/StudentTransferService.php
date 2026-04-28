@@ -12,6 +12,7 @@ use App\Models\SchoolSubscription;
 use App\Models\StudentQrToken;
 use App\Models\StudentRecord;
 use App\Models\StudentTransfer;
+use App\Models\TransferNotificationEvent;
 use App\Notifications\StudentTransferAcceptedNotification;
 use App\Notifications\StudentTransferRejectedNotification;
 use App\Notifications\StudentTransferRequestedNotification;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 class StudentTransferService
 {
@@ -118,13 +120,18 @@ class StudentTransferService
             throw new RuntimeException('You can only transfer students from your own school.');
         }
 
+        if ((bool) config('transfers.policies.require_transfer_note', false) && trim((string) $note) === '') {
+            throw new RuntimeException('Transfer note is required by transfer policy.');
+        }
+
+        $maxPending = max(1, (int) config('transfers.policies.max_pending_per_student', 1));
         $existingPending = StudentTransfer::query()
             ->where('student_id', $student->id)
             ->where('status', StudentTransfer::STATUS_PENDING)
-            ->exists();
+            ->count();
 
-        if ($existingPending) {
-            throw new RuntimeException('This student already has a pending transfer request.');
+        if ($existingPending >= $maxPending) {
+            throw new RuntimeException('Pending transfer limit reached for this student.');
         }
 
         $record = StudentRecord::withoutGlobalScopes()
@@ -189,7 +196,12 @@ class StudentTransferService
                 throw new RuntimeException('Student school does not match transfer origin.');
             }
 
-            $placement = $this->resolveDestinationPlacement($lockedTransfer, $toSchoolId);
+            if ((bool) config('transfers.policies.require_snapshot_fields_before_accept', true)) {
+                $this->assertRequiredSnapshotFieldsForAcceptance($lockedTransfer);
+            }
+
+            $strictMapping = (bool) config('transfers.policies.require_destination_mapping', true);
+            $placement = $this->resolveDestinationPlacement($lockedTransfer, $toSchoolId, $strictMapping);
 
             User::withoutGlobalScopes()
                 ->where('id', $student->id)
@@ -385,7 +397,20 @@ class StudentTransferService
     {
         foreach ($users as $user) {
             if ($user && $user->email) {
-                $user->notify($notification);
+                try {
+                    $user->notify($notification);
+                } catch (Throwable $e) {
+                    TransferNotificationEvent::query()->create([
+                        'transfer_id' => method_exists($notification, 'transferId') ? (int) $notification->transferId() : null,
+                        'school_id' => (int) ($user->school_id ?? 0) ?: null,
+                        'notifiable_id' => (int) ($user->id ?? 0) ?: null,
+                        'notifiable_email' => (string) $user->email,
+                        'notification_class' => get_class($notification),
+                        'channel' => 'mail',
+                        'status' => 'failed',
+                        'error' => 'Dispatch failure: ' . $e->getMessage(),
+                    ]);
+                }
             }
         }
     }
@@ -459,7 +484,7 @@ class StudentTransferService
         ];
     }
 
-    private function resolveDestinationPlacement(StudentTransfer $transfer, int $toSchoolId): array
+    private function resolveDestinationPlacement(StudentTransfer $transfer, int $toSchoolId, bool $strictMapping = true): array
     {
         $snapshotAcademic = is_array($transfer->transfer_snapshot)
             ? ($transfer->transfer_snapshot['academic'] ?? [])
@@ -478,6 +503,10 @@ class StudentTransferService
             ->first();
 
         if (!$destinationClass) {
+            if (!$strictMapping) {
+                return ['class_id' => null, 'section_id' => null];
+            }
+
             throw new RuntimeException('Cannot accept transfer: destination school has no matching class for "' . $className . '".');
         }
 
@@ -490,6 +519,13 @@ class StudentTransferService
                 ->first();
 
             if (!$destinationSection) {
+                if (!$strictMapping) {
+                    return [
+                        'class_id' => (int) $destinationClass->id,
+                        'section_id' => null,
+                    ];
+                }
+
                 throw new RuntimeException('Cannot accept transfer: destination school has no matching section "' . $sectionName . '" for class "' . $className . '".');
             }
 
@@ -500,5 +536,25 @@ class StudentTransferService
             'class_id' => (int) $destinationClass->id,
             'section_id' => $destinationSectionId,
         ];
+    }
+
+    private function assertRequiredSnapshotFieldsForAcceptance(StudentTransfer $transfer): void
+    {
+        $snapshot = is_array($transfer->transfer_snapshot) ? $transfer->transfer_snapshot : [];
+        $student = (array) ($snapshot['student'] ?? []);
+        $parent = (array) ($snapshot['parent'] ?? []);
+        $academic = (array) ($snapshot['academic'] ?? []);
+
+        if (trim((string) ($student['name'] ?? '')) === '') {
+            throw new RuntimeException('Cannot accept transfer: student identity snapshot is incomplete.');
+        }
+
+        if (trim((string) ($parent['name'] ?? '')) === '') {
+            throw new RuntimeException('Cannot accept transfer: parent snapshot is incomplete.');
+        }
+
+        if (trim((string) ($academic['class_name'] ?? '')) === '') {
+            throw new RuntimeException('Cannot accept transfer: academic class snapshot is incomplete.');
+        }
     }
 }

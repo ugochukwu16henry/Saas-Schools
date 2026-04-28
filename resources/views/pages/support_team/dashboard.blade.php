@@ -195,6 +195,94 @@
 
 <div class="card mb-3">
     <div class="card-header header-elements-inline">
+        <h6 class="card-title font-weight-semibold">Transfer KPI Drilldown</h6>
+        <div class="d-flex align-items-center" style="gap:8px;">
+            <a href="{{ route('dashboard', array_merge(request()->query(), ['transfer_kpi_scope' => 'incoming'])) }}" class="btn btn-sm {{ data_get($transferKpiDrilldown ?? [], 'scope', 'incoming') === 'incoming' ? 'btn-primary' : 'btn-light' }}">Incoming</a>
+            <a href="{{ route('dashboard', array_merge(request()->query(), ['transfer_kpi_scope' => 'outgoing'])) }}" class="btn btn-sm {{ data_get($transferKpiDrilldown ?? [], 'scope', 'incoming') === 'outgoing' ? 'btn-primary' : 'btn-light' }}">Outgoing</a>
+            <a href="{{ route('dashboard', array_merge(request()->query(), ['transfer_kpi_scope' => 'all'])) }}" class="btn btn-sm {{ data_get($transferKpiDrilldown ?? [], 'scope', 'incoming') === 'all' ? 'btn-primary' : 'btn-light' }}">All</a>
+            <a href="{{ route('dashboard', array_merge(request()->query(), ['transfer_kpi_window' => '7'])) }}" class="btn btn-sm {{ data_get($transferKpiDrilldown ?? [], 'window', '30') === '7' ? 'btn-secondary' : 'btn-light' }}">7d</a>
+            <a href="{{ route('dashboard', array_merge(request()->query(), ['transfer_kpi_window' => '30'])) }}" class="btn btn-sm {{ data_get($transferKpiDrilldown ?? [], 'window', '30') === '30' ? 'btn-secondary' : 'btn-light' }}">30d</a>
+            <a href="{{ route('dashboard', array_merge(request()->query(), ['transfer_kpi_window' => '90'])) }}" class="btn btn-sm {{ data_get($transferKpiDrilldown ?? [], 'window', '30') === '90' ? 'btn-secondary' : 'btn-light' }}">90d</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-2">
+            <div class="col-md-3"><strong>Pending:</strong> {{ data_get($transferKpiDrilldown ?? [], 'status_counts.pending', 0) }}</div>
+            <div class="col-md-3"><strong>Accepted:</strong> {{ data_get($transferKpiDrilldown ?? [], 'status_counts.accepted', 0) }}</div>
+            <div class="col-md-3"><strong>Rejected:</strong> {{ data_get($transferKpiDrilldown ?? [], 'status_counts.rejected', 0) }}</div>
+            <div class="col-md-3"><strong>Cancelled:</strong> {{ data_get($transferKpiDrilldown ?? [], 'status_counts.cancelled', 0) }}</div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Pending</th>
+                        <th>Accepted</th>
+                        <th>Rejected</th>
+                        <th>Cancelled</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse(data_get($transferKpiDrilldown ?? [], 'trend', []) as $day => $row)
+                    <tr>
+                        <td>{{ $day }}</td>
+                        <td>{{ $row['pending'] ?? 0 }}</td>
+                        <td>{{ $row['accepted'] ?? 0 }}</td>
+                        <td>{{ $row['rejected'] ?? 0 }}</td>
+                        <td>{{ $row['cancelled'] ?? 0 }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No trend data for selected scope/window.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header header-elements-inline">
+        <h6 class="card-title font-weight-semibold">Notification Reliability</h6>
+        <span class="badge badge-warning">Pending failures: {{ data_get($transferNotificationVisibility ?? [], 'pending_failures_count', 0) }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Transfer ID</th>
+                        <th>Recipient</th>
+                        <th>Notification</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse(data_get($transferNotificationVisibility ?? [], 'recent_failures', collect()) as $failure)
+                    <tr>
+                        <td>{{ optional($failure->created_at)->toDateTimeString() }}</td>
+                        <td>{{ $failure->transfer_id ?: 'N/A' }}</td>
+                        <td>{{ $failure->notifiable_email ?: 'N/A' }}</td>
+                        <td>{{ class_basename($failure->notification_class) }}</td>
+                        <td>{{ \Illuminate\Support\Str::limit($failure->error ?: 'N/A', 80) }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No pending notification failures.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header header-elements-inline">
         <h6 class="card-title font-weight-semibold">Newly Received Students</h6>
         <div class="d-flex align-items-center" style="gap:8px;">
             <a href="{{ route('dashboard', ['received_window' => '7']) }}" class="btn btn-sm {{ ($receivedWindow ?? '7') === '7' ? 'btn-primary' : 'btn-light' }}">Last 7 days</a>

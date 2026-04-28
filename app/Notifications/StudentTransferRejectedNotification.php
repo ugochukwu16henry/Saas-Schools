@@ -4,18 +4,25 @@ namespace App\Notifications;
 
 use App\Models\StudentTransfer;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class StudentTransferRejectedNotification extends Notification
+class StudentTransferRejectedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    public int $tries;
+    public array $backoff;
 
     private StudentTransfer $transfer;
 
     public function __construct(StudentTransfer $transfer)
     {
         $this->transfer = $transfer;
+        $this->tries = (int) config('transfers.notifications.tries', 5);
+        $this->backoff = (array) config('transfers.notifications.backoff_seconds', [60, 300, 900]);
+        $this->onQueue((string) config('transfers.notifications.queue', 'mail-notifications'));
     }
 
     public function via($notifiable): array
@@ -38,5 +45,10 @@ class StudentTransferRejectedNotification extends Notification
             ->line('Requested School: ' . $toSchool)
             ->line('Reason: ' . ($this->transfer->rejected_reason ?: 'No reason provided.'))
             ->action('View Transfer Outbox', route('transfers.outbox'));
+    }
+
+    public function transferId(): int
+    {
+        return (int) $this->transfer->id;
     }
 }
