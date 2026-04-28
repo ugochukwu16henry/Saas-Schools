@@ -9,6 +9,7 @@ use App\Models\StudentTransfer;
 use App\Services\StudentTransferService;
 use App\User;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use RuntimeException;
 
 class StudentTransferController extends Controller
@@ -121,6 +122,110 @@ class StudentTransferController extends Controller
         $data['school'] = $school;
 
         return view('pages.super_admin.transfers.show', $data);
+    }
+
+    public function exportAudit(Request $request): StreamedResponse
+    {
+        $school = $this->currentSchool();
+
+        $scope = (string) $request->query('scope', 'inbox');
+        if (!in_array($scope, ['inbox', 'outbox'], true)) {
+            $scope = 'inbox';
+        }
+
+        $status = trim((string) $request->query('status', ''));
+        $allowedStatuses = [
+            StudentTransfer::STATUS_PENDING,
+            StudentTransfer::STATUS_ACCEPTED,
+            StudentTransfer::STATUS_REJECTED,
+            StudentTransfer::STATUS_CANCELLED,
+        ];
+
+        $query = StudentTransfer::query()
+            ->with([
+                'student.student_record.my_parent',
+                'student.student_record.my_class',
+                'student.student_record.section',
+                'fromSchool',
+                'toSchool',
+                'requestedBy',
+                'acceptedBy',
+            ])
+            ->when($scope === 'inbox', function ($q) use ($school) {
+                $q->where('to_school_id', (int) $school->id);
+            })
+            ->when($scope === 'outbox', function ($q) use ($school) {
+                $q->where('from_school_id', (int) $school->id);
+            });
+
+        if (in_array($status, $allowedStatuses, true)) {
+            $query->where('status', $status);
+        }
+
+        $rows = $query->latest('id')->get();
+
+        $filename = 'student-transfer-audit-' . $scope . '-' . now()->format('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($rows, $scope): void {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'transfer_id',
+                'scope',
+                'status',
+                'student_name',
+                'student_code',
+                'parent_name',
+                'class',
+                'section',
+                'from_school',
+                'to_school',
+                'requested_by',
+                'accepted_by',
+                'requested_at',
+                'transferred_at',
+                'rejected_reason',
+                'transfer_note',
+                'last_event',
+                'last_event_at',
+            ]);
+
+            foreach ($rows as $transfer) {
+                $snapshot = is_array($transfer->transfer_snapshot) ? $transfer->transfer_snapshot : [];
+                $snapshotAcademic = (array) ($snapshot['academic'] ?? []);
+
+                $student = $transfer->student;
+                $record = optional($student)->student_record;
+
+                $history = is_array($transfer->status_history) ? $transfer->status_history : [];
+                $lastEvent = !empty($history) ? end($history) : [];
+
+                fputcsv($handle, [
+                    (int) $transfer->id,
+                    $scope,
+                    (string) $transfer->status,
+                    (string) (optional($student)->name ?? ($snapshot['student']['name'] ?? '')),
+                    (string) (optional($student)->code ?? ($snapshot['student']['code'] ?? '')),
+                    (string) (optional(optional($record)->my_parent)->name ?? ($snapshot['parent']['name'] ?? '')),
+                    (string) (optional(optional($record)->my_class)->name ?? ($snapshotAcademic['class_name'] ?? '')),
+                    (string) (optional(optional($record)->section)->name ?? ($snapshotAcademic['section_name'] ?? '')),
+                    (string) optional($transfer->fromSchool)->name,
+                    (string) optional($transfer->toSchool)->name,
+                    (string) optional($transfer->requestedBy)->name,
+                    (string) optional($transfer->acceptedBy)->name,
+                    (string) optional($transfer->created_at)->toDateTimeString(),
+                    (string) (optional($transfer->transferred_at)->toDateTimeString() ?: ''),
+                    (string) ($transfer->rejected_reason ?? ''),
+                    (string) ($transfer->transfer_note ?? ''),
+                    (string) ($lastEvent['event'] ?? ''),
+                    (string) ($lastEvent['at'] ?? ''),
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function accept(StudentTransfer $transfer)

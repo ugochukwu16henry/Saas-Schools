@@ -5,7 +5,10 @@
 <div class="card">
     <div class="card-header header-elements-inline">
         <h6 class="card-title font-weight-semibold">Outgoing Transfers</h6>
-        <a href="{{ route('transfers.create') }}" class="btn btn-primary btn-sm">New Transfer</a>
+        <div>
+            <a href="{{ route('transfers.audit.export', ['scope' => 'outbox']) }}" class="btn btn-outline-primary btn-sm">Export CSV</a>
+            <a href="{{ route('transfers.create') }}" class="btn btn-primary btn-sm">New Transfer</a>
+        </div>
     </div>
 
     <div class="card-body">

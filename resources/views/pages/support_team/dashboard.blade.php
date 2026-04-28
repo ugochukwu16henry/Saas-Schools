@@ -129,6 +129,70 @@
 @endif
 
 @if(Qs::userIsTeamSA() && isset($recentlyReceivedTransfers))
+<div class="row mb-3">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-body bg-primary-400 has-bg-image">
+            <div class="media">
+                <div class="media-body">
+                    <h3 class="mb-0">{{ data_get($transferKpis ?? [], 'pending_incoming', 0) }}</h3>
+                    <span class="text-uppercase font-size-xs">Pending Incoming Transfers</span>
+                </div>
+                <div class="ml-3 align-self-center">
+                    <i class="icon-download4 icon-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-body bg-warning-400 has-bg-image">
+            <div class="media">
+                <div class="media-body">
+                    <h3 class="mb-0">{{ data_get($transferKpis ?? [], 'pending_outgoing', 0) }}</h3>
+                    <span class="text-uppercase font-size-xs">Pending Outgoing Transfers</span>
+                </div>
+                <div class="ml-3 align-self-center">
+                    <i class="icon-upload4 icon-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-body bg-success-400 has-bg-image">
+            <div class="media">
+                <div class="media-body">
+                    <h3 class="mb-0">{{ data_get($transferKpis ?? [], 'accepted_last_30', 0) }}</h3>
+                    <span class="text-uppercase font-size-xs">Accepted (Last 30 Days)</span>
+                </div>
+                <div class="ml-3 align-self-center">
+                    <i class="icon-checkmark4 icon-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-body bg-indigo-400 has-bg-image">
+            <div class="media">
+                <div class="media-body">
+                    <h3 class="mb-0">
+                        @if(!is_null(data_get($transferKpis ?? [], 'avg_acceptance_hours_last_30')))
+                        {{ number_format((float) data_get($transferKpis, 'avg_acceptance_hours_last_30'), 1) }}h
+                        @else
+                        N/A
+                        @endif
+                    </h3>
+                    <span class="text-uppercase font-size-xs">Avg Acceptance Time (30d)</span>
+                </div>
+                <div class="ml-3 align-self-center">
+                    <i class="icon-history icon-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card mb-3">
     <div class="card-header header-elements-inline">
         <h6 class="card-title font-weight-semibold">Newly Received Students</h6>

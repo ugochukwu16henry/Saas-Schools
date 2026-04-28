@@ -91,6 +91,45 @@ class HomeController extends Controller
                 ->get();
             $d['receivedWindow'] = $receivedWindow;
 
+            $acceptedLast30Days = StudentTransfer::query()
+                ->where('to_school_id', (int) $school->id)
+                ->where('status', StudentTransfer::STATUS_ACCEPTED)
+                ->whereNotNull('transferred_at')
+                ->where('transferred_at', '>=', now()->subDays(30))
+                ->get(['created_at', 'transferred_at']);
+
+            $avgAcceptanceHours = null;
+            if ($acceptedLast30Days->isNotEmpty()) {
+                $avgHours = $acceptedLast30Days
+                    ->filter(function ($transfer) {
+                        return $transfer->created_at && $transfer->transferred_at;
+                    })
+                    ->map(function ($transfer) {
+                        return $transfer->created_at->diffInMinutes($transfer->transferred_at) / 60;
+                    })
+                    ->avg();
+
+                $avgAcceptanceHours = is_null($avgHours) ? null : round((float) $avgHours, 1);
+            }
+
+            $d['transferKpis'] = [
+                'pending_incoming' => (int) StudentTransfer::query()
+                    ->where('to_school_id', (int) $school->id)
+                    ->where('status', StudentTransfer::STATUS_PENDING)
+                    ->count(),
+                'pending_outgoing' => (int) StudentTransfer::query()
+                    ->where('from_school_id', (int) $school->id)
+                    ->where('status', StudentTransfer::STATUS_PENDING)
+                    ->count(),
+                'accepted_last_30' => (int) $acceptedLast30Days->count(),
+                'rejected_last_30' => (int) StudentTransfer::query()
+                    ->where('to_school_id', (int) $school->id)
+                    ->where('status', StudentTransfer::STATUS_REJECTED)
+                    ->where('updated_at', '>=', now()->subDays(30))
+                    ->count(),
+                'avg_acceptance_hours_last_30' => $avgAcceptanceHours,
+            ];
+
             $receivedTransferQrTokens = [];
             $qrService = app(StudentQrService::class);
             foreach (($d['recentlyReceivedTransfers'] ?? collect()) as $transfer) {

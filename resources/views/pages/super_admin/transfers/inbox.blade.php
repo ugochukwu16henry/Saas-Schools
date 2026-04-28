@@ -5,6 +5,7 @@
 <div class="card">
     <div class="card-header header-elements-inline">
         <h6 class="card-title font-weight-semibold">Incoming Transfers</h6>
+        <a href="{{ route('transfers.audit.export', ['scope' => 'inbox']) }}" class="btn btn-sm btn-outline-primary">Export CSV</a>
         {!! Qs::getPanelOptions() !!}
     </div>
 
