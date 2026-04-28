@@ -21,6 +21,71 @@ use RuntimeException;
 
 class StudentTransferService
 {
+    public function buildTransferDetails(StudentTransfer $transfer, User $viewer): array
+    {
+        $transfer = StudentTransfer::query()
+            ->with([
+                'student',
+                'fromSchool',
+                'toSchool',
+                'requestedBy',
+                'acceptedBy',
+            ])
+            ->findOrFail($transfer->id);
+
+        $student = User::withoutGlobalScopes()
+            ->with('school')
+            ->findOrFail((int) $transfer->student_id);
+
+        $studentRecord = StudentRecord::withoutGlobalScopes()
+            ->with(['my_class', 'section', 'my_parent'])
+            ->where('user_id', (int) $transfer->student_id)
+            ->first();
+
+        $parent = $studentRecord && $studentRecord->my_parent_id
+            ? User::withoutGlobalScopes()->find($studentRecord->my_parent_id)
+            : null;
+
+        $examRecordsQuery = ExamRecord::withoutGlobalScopes()
+            ->where('student_id', (int) $transfer->student_id);
+
+        $marksQuery = Mark::withoutGlobalScopes()
+            ->where('student_id', (int) $transfer->student_id);
+
+        $promotionsQuery = Promotion::withoutGlobalScopes()
+            ->where('student_id', (int) $transfer->student_id);
+
+        $examRecordsCount = (int) (clone $examRecordsQuery)->count();
+        $marksCount = (int) (clone $marksQuery)->count();
+        $promotionsCount = (int) (clone $promotionsQuery)->count();
+
+        $recentExamRecords = (clone $examRecordsQuery)
+            ->with(['exam', 'my_class', 'section'])
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $recentMarks = (clone $marksQuery)
+            ->with(['subject', 'exam', 'my_class', 'section', 'grade'])
+            ->latest('id')
+            ->limit(20)
+            ->get();
+
+        return [
+            'transfer' => $transfer,
+            'student' => $student,
+            'studentRecord' => $studentRecord,
+            'parent' => $parent,
+            'examRecordsCount' => $examRecordsCount,
+            'marksCount' => $marksCount,
+            'promotionsCount' => $promotionsCount,
+            'recentExamRecords' => $recentExamRecords,
+            'recentMarks' => $recentMarks,
+            'transcriptUrl' => route('students.transcript.show', $student->id),
+            'transcriptDownloadUrl' => route('students.transcript.download', $student->id),
+        ];
+    }
+
     public function initiateTransfer(User $student, School $toSchool, User $requestedBy, ?string $note = null): StudentTransfer
     {
         if ($student->user_type !== 'student') {
@@ -97,9 +162,17 @@ class StudentTransferService
                 ->where('id', $student->id)
                 ->update(['school_id' => $toSchoolId]);
 
+            $studentRecordUpdate = ['school_id' => $toSchoolId];
+            if ($transfer->from_class_id) {
+                $studentRecordUpdate['my_class_id'] = (int) $transfer->from_class_id;
+            }
+            if ($transfer->from_section_id) {
+                $studentRecordUpdate['section_id'] = (int) $transfer->from_section_id;
+            }
+
             StudentRecord::withoutGlobalScopes()
                 ->where('user_id', $student->id)
-                ->update(['school_id' => $toSchoolId]);
+                ->update($studentRecordUpdate);
 
             Mark::withoutGlobalScopes()
                 ->where('student_id', $student->id)

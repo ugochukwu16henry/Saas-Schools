@@ -217,6 +217,7 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
             Route::get('inbox', 'StudentTransferController@inbox')->name('transfers.inbox');
             Route::get('create', 'StudentTransferController@create')->name('transfers.create');
             Route::get('search-school', 'StudentTransferController@searchSchool')->name('transfers.search_school');
+            Route::get('{transfer}', 'StudentTransferController@show')->name('transfers.show');
             Route::post('/', 'StudentTransferController@store')->name('transfers.store');
             Route::patch('{transfer}/accept', 'StudentTransferController@accept')->name('transfers.accept');
             Route::patch('{transfer}/reject', 'StudentTransferController@reject')->name('transfers.reject');

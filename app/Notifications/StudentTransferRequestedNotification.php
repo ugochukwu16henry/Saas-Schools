@@ -26,18 +26,27 @@ class StudentTransferRequestedNotification extends Notification
     public function toMail($notifiable): MailMessage
     {
         $studentName = optional($this->transfer->student)->name ?: 'student';
+        $studentRecord = optional($this->transfer->student)->student_record;
+        $parent = $studentRecord ? $studentRecord->my_parent : null;
         $fromSchool = optional($this->transfer->fromSchool)->name ?: 'another school';
         $toSchool = optional($this->transfer->toSchool)->name ?: 'your school';
+        $className = $studentRecord && $studentRecord->my_class ? $studentRecord->my_class->name : 'N/A';
+        $sectionName = $studentRecord && $studentRecord->section ? $studentRecord->section->name : '';
+        $parentName = $parent ? ($parent->name ?: 'N/A') : 'N/A';
+        $parentPhone = $parent ? ($parent->phone ?: 'N/A') : 'N/A';
 
         return (new MailMessage)
             ->subject('New student transfer request received')
             ->greeting('Hello ' . ($notifiable->name ?? 'there') . ',')
             ->line('A student transfer request has been initiated to your school.')
             ->line('Student: ' . $studentName)
+            ->line('Class: ' . trim($className . ' ' . $sectionName))
+            ->line('Parent: ' . $parentName . ' (' . $parentPhone . ')')
             ->line('From School: ' . $fromSchool)
             ->line('To School: ' . $toSchool)
             ->line('Requested At: ' . optional($this->transfer->created_at)->toDateTimeString())
-            ->line('Please review and accept/reject this transfer from your transfer inbox.')
-            ->action('Open Transfer Inbox', route('transfers.inbox'));
+            ->line('Inbox URL: ' . route('transfers.inbox'))
+            ->action('View Transfer Details', route('transfers.show', $this->transfer->id))
+            ->line('Please review and accept/reject this transfer from your transfer inbox.');
     }
 }

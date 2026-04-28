@@ -85,7 +85,7 @@ class StudentTransferController extends Controller
         $school = $this->currentSchool();
 
         $transfers = StudentTransfer::query()
-            ->with(['student', 'fromSchool', 'requestedBy'])
+            ->with(['student.student_record.my_parent', 'student.student_record.my_class', 'student.student_record.section', 'fromSchool', 'requestedBy'])
             ->where('to_school_id', $school->id)
             ->latest('id')
             ->paginate(20);
@@ -98,12 +98,29 @@ class StudentTransferController extends Controller
         $school = $this->currentSchool();
 
         $transfers = StudentTransfer::query()
-            ->with(['student', 'toSchool', 'requestedBy', 'acceptedBy'])
+            ->with(['student.student_record.my_parent', 'student.student_record.my_class', 'student.student_record.section', 'toSchool', 'requestedBy', 'acceptedBy'])
             ->where('from_school_id', $school->id)
             ->latest('id')
             ->paginate(20);
 
         return view('pages.super_admin.transfers.outbox', compact('transfers', 'school'));
+    }
+
+    public function show(StudentTransfer $transfer)
+    {
+        $school = $this->currentSchool();
+
+        $allowed = (int) $school->id === (int) $transfer->from_school_id
+            || (int) $school->id === (int) $transfer->to_school_id;
+
+        if (!$allowed) {
+            abort(403, __('msg.denied'));
+        }
+
+        $data = $this->transferService->buildTransferDetails($transfer, auth()->user());
+        $data['school'] = $school;
+
+        return view('pages.super_admin.transfers.show', $data);
     }
 
     public function accept(StudentTransfer $transfer)
