@@ -188,7 +188,7 @@
                             </td>
                             <td class="text-center">{{ number_format($sub->billed_students) }}</td>
                             <td class="text-right font-weight-semibold text-teal">
-                                ₦{{ number_format($sub->billed_students * (($sub->school && $sub->school->billingPlan) ? $sub->school->billingPlan->monthly_rate_per_student : 100)) }}
+                                ₦{{ number_format($sub->school ? ($sub->billed_students * $sub->school->effectiveMonthlyRate()) : 0) }}
                             </td>
                         </tr>
                         @empty

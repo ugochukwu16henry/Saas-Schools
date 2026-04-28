@@ -37,7 +37,7 @@
                     <a href="{{ route('login') }}" class="btn saas-btn-secondary btn-lg">Sign in</a>
                 </div>
 
-                <div class="mh-trust-note">First {{ number_format($freeLimit ?? 50) }} students are free for life. Above {{ number_format($freeLimit ?? 50) }}, pay a one-time ₦{{ number_format($oneTimeRate ?? 500) }} per newly added student and ₦{{ number_format($monthlyRate ?? 100) }} per student monthly.</div>
+                <div class="mh-trust-note">First {{ number_format($freeLimit ?? 50) }} students are free for life. Above {{ number_format($freeLimit ?? 50) }}, pay a one-time ₦{{ number_format($oneTimeRate ?? 1000) }} per newly added student and ₦{{ number_format($monthlyRate ?? 500) }} per student monthly.</div>
             </div>
         </section>
 
@@ -63,7 +63,7 @@
                 <div class="col-md-4 mb-3">
                     <article class="mh-card">
                         <h3>Finance and Billing</h3>
-                        <p>Enjoy lifetime free access for your first {{ number_format($freeLimit ?? 50) }} students, then transparent one-time and monthly billing as your school grows.</p>
+                        <p>Enjoy lifetime free access for your first {{ number_format($freeLimit ?? 50) }} students, then transparent ₦{{ number_format($oneTimeRate ?? 1000) }} upload billing and ₦{{ number_format($monthlyRate ?? 500) }} monthly billing as your school grows.</p>
                     </article>
                 </div>
                 <div class="col-md-4 mb-3">
@@ -149,9 +149,9 @@
                     <div class="col-md-6 mb-3">
                         <div class="mh-price-card mh-price-card-featured">
                             <h3>Growth</h3>
-                            <p class="mh-price">₦{{ number_format($monthlyRate ?? 100) }} <span>/student/month above {{ number_format($freeLimit ?? 50) }}</span></p>
+                            <p class="mh-price">₦{{ number_format($monthlyRate ?? 500) }} <span>/student/month above {{ number_format($freeLimit ?? 50) }}</span></p>
                             <ul class="mh-list">
-                                <li>₦{{ number_format($oneTimeRate ?? 500) }} one-time per newly added student above {{ number_format($freeLimit ?? 50) }}</li>
+                                <li>₦{{ number_format($oneTimeRate ?? 1000) }} one-time per newly added student above {{ number_format($freeLimit ?? 50) }}</li>
                                 <li>Scale without migration</li>
                                 <li>Paystack billing support</li>
                                 <li>Platform-level monitoring</li>
@@ -166,7 +166,7 @@
             <div class="mh-card" style="max-width:920px;margin:0 auto;">
                 <span class="mh-kicker">RiseFlow Affiliate Program</span>
                 <h2 class="mh-section-title">Refer schools. Earn when they bill.</h2>
-                <p class="mb-3">Share RiseFlow with school owners using your personal referral link. When a referred school completes successful Paystack payments, you accrue commissions based on billable students (one-time and monthly components).</p>
+                <p class="mb-3">Share RiseFlow with school owners using your personal referral link. When a referred school completes successful Paystack payments, you accrue ₦{{ number_format($affiliateOneTimeRate ?? 200) }} for each newly billed student and ₦{{ number_format($affiliateMonthlyRate ?? 100) }} monthly for each billable student under the active plan.</p>
                 <ul class="mh-list mb-4">
                     <li>Request access, pass a quick review, and receive your referral code</li>
                     <li>Schools register with your link so attribution stays clear</li>
@@ -176,7 +176,7 @@
                     <a href="{{ route('affiliates.request') }}" class="btn saas-btn-primary">Apply as an affiliate</a>
                     <a href="{{ route('affiliate.login') }}" class="btn saas-btn-secondary">Affiliate sign in</a>
                 </div>
-                <p class="small text-muted mt-3 mb-0">Payouts and rates are communicated during onboarding. Platform administrators approve each application.</p>
+                <p class="small text-muted mt-3 mb-0">Default affiliate payout rates are ₦{{ number_format($affiliateOneTimeRate ?? 200) }} per newly billed student and ₦{{ number_format($affiliateMonthlyRate ?? 100) }} monthly per billable student. Platform administrators can update rates from the billing dashboard.</p>
             </div>
         </section>
 
@@ -191,7 +191,7 @@
 
                 <div class="faq-item">
                     <h3>How does billing work?</h3>
-                    <p>Your first {{ number_format($freeLimit ?? 50) }} students are free for life. For each newly added student above {{ number_format($freeLimit ?? 50) }}, there is a one-time ₦{{ number_format($oneTimeRate ?? 500) }} charge, plus ₦{{ number_format($monthlyRate ?? 100) }} monthly per student above {{ number_format($freeLimit ?? 50) }}.</p>
+                    <p>Your first {{ number_format($freeLimit ?? 50) }} students are free for life. For each newly added student above {{ number_format($freeLimit ?? 50) }}, there is a one-time ₦{{ number_format($oneTimeRate ?? 1000) }} charge, plus ₦{{ number_format($monthlyRate ?? 500) }} monthly per student above {{ number_format($freeLimit ?? 50) }}.</p>
                 </div>
 
                 <div class="faq-item">

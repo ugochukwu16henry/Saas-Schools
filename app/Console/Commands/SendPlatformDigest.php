@@ -46,8 +46,8 @@ class SendPlatformDigest extends Command
         }
 
         $schools = School::query()
-            ->select(['id', 'status', 'free_student_limit', 'onboarding_completed_at'])
-            ->with('subscription')
+            ->select(['id', 'status', 'free_student_limit', 'billing_plan_id', 'onboarding_completed_at'])
+            ->with(['subscription', 'billingPlan'])
             ->withCount([
                 'users as students_count' => function ($q) {
                     $q->where('user_type', 'student');
@@ -80,6 +80,7 @@ class SendPlatformDigest extends Command
         ];
 
         $estimatedBillableStudents = 0;
+        $projectedMrrNgn = 0;
         foreach ($schools as $school) {
             $subscription = $school->subscription;
             $failureCount = (int) ($subscription->payment_failures_count ?? 0);
@@ -98,7 +99,9 @@ class SendPlatformDigest extends Command
                 $risk['low']++;
             }
 
-            $estimatedBillableStudents += max(0, (int) $school->students_count - (int) $school->free_student_limit);
+            $billableStudents = max(0, (int) $school->students_count - $school->effectiveFreeStudentLimit());
+            $estimatedBillableStudents += $billableStudents;
+            $projectedMrrNgn += $billableStudents * $school->effectiveMonthlyRate();
         }
 
         $healthService = app(SchoolHealthScoreService::class);
@@ -121,7 +124,7 @@ class SendPlatformDigest extends Command
             ],
             'billing' => [
                 'estimated_billable_students' => (int) $estimatedBillableStudents,
-                'projected_mrr_ngn' => (int) ($estimatedBillableStudents * 100),
+                'projected_mrr_ngn' => (int) $projectedMrrNgn,
                 'at_risk_schools' => (int) ($risk['critical'] + $risk['high']),
             ],
             'health' => [

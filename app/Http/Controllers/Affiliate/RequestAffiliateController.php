@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Affiliate;
 
 use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
+use App\Models\BillingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,16 @@ class RequestAffiliateController extends Controller
 {
     public function create()
     {
-        return view('affiliate.request');
+        $defaultPlan = BillingPlan::defaultActive();
+
+        return view('affiliate.request', [
+            'affiliateOneTimeRate' => $defaultPlan
+                ? (int) $defaultPlan->affiliate_one_time_commission_per_student
+                : BillingPlan::DEFAULT_AFFILIATE_ONE_TIME_COMMISSION_NGN,
+            'affiliateMonthlyRate' => $defaultPlan
+                ? (int) $defaultPlan->affiliate_monthly_commission_per_student
+                : BillingPlan::DEFAULT_AFFILIATE_MONTHLY_COMMISSION_NGN,
+        ]);
     }
 
     public function store(Request $request)

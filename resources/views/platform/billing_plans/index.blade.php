@@ -18,11 +18,19 @@
                     </div>
                     <div class="form-group">
                         <label class="font-weight-semibold">Monthly Rate per Billable Student (₦)</label>
-                        <input type="number" name="monthly_rate_per_student" class="form-control" value="{{ old('monthly_rate_per_student', 100) }}" min="0" required>
+                        <input type="number" name="monthly_rate_per_student" class="form-control" value="{{ old('monthly_rate_per_student', 500) }}" min="0" required>
                     </div>
                     <div class="form-group">
-                        <label class="font-weight-semibold">One-time Add Rate (₦)</label>
-                        <input type="number" name="one_time_add_rate" class="form-control" value="{{ old('one_time_add_rate', 500) }}" min="0" required>
+                        <label class="font-weight-semibold">One-time Upload Rate (₦)</label>
+                        <input type="number" name="one_time_add_rate" class="form-control" value="{{ old('one_time_add_rate', 1000) }}" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-semibold">Affiliate One-time Commission per New Billable Student (₦)</label>
+                        <input type="number" name="affiliate_one_time_commission_per_student" class="form-control" value="{{ old('affiliate_one_time_commission_per_student', 200) }}" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-semibold">Affiliate Monthly Commission per Billable Student (₦)</label>
+                        <input type="number" name="affiliate_monthly_commission_per_student" class="form-control" value="{{ old('affiliate_monthly_commission_per_student', 100) }}" min="0" required>
                     </div>
                     <div class="form-group">
                         <label class="font-weight-semibold">Default Free Student Limit</label>
@@ -54,6 +62,8 @@
                             <th>Plan</th>
                             <th class="text-right">Monthly ₦</th>
                             <th class="text-right">One-time ₦</th>
+                            <th class="text-right">Affiliate Upload ₦</th>
+                            <th class="text-right">Affiliate Monthly ₦</th>
                             <th class="text-right">Free Limit</th>
                             <th class="text-center">Schools</th>
                             <th>Status</th>
@@ -70,6 +80,8 @@
                             </td>
                             <td class="text-right">{{ number_format($plan->monthly_rate_per_student) }}</td>
                             <td class="text-right">{{ number_format($plan->one_time_add_rate) }}</td>
+                            <td class="text-right">{{ number_format($plan->affiliate_one_time_commission_per_student) }}</td>
+                            <td class="text-right">{{ number_format($plan->affiliate_monthly_commission_per_student) }}</td>
                             <td class="text-right">{{ number_format($plan->default_free_student_limit) }}</td>
                             <td class="text-center">{{ number_format($plan->schools_count) }}</td>
                             <td>
@@ -81,13 +93,15 @@
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="6" class="bg-light">
+                            <td colspan="8" class="bg-light">
                                 <form method="POST" action="{{ route('platform.billing_plans.update', $plan) }}" class="form-inline" style="gap:8px;">
                                     @csrf
                                     @method('PATCH')
                                     <input type="text" name="name" class="form-control form-control-sm" value="{{ $plan->name }}" style="width:160px;" required>
                                     <input type="number" name="monthly_rate_per_student" class="form-control form-control-sm" value="{{ $plan->monthly_rate_per_student }}" min="0" style="width:120px;" required>
                                     <input type="number" name="one_time_add_rate" class="form-control form-control-sm" value="{{ $plan->one_time_add_rate }}" min="0" style="width:120px;" required>
+                                    <input type="number" name="affiliate_one_time_commission_per_student" class="form-control form-control-sm" value="{{ $plan->affiliate_one_time_commission_per_student }}" min="0" style="width:120px;" required>
+                                    <input type="number" name="affiliate_monthly_commission_per_student" class="form-control form-control-sm" value="{{ $plan->affiliate_monthly_commission_per_student }}" min="0" style="width:120px;" required>
                                     <input type="number" name="default_free_student_limit" class="form-control form-control-sm" value="{{ $plan->default_free_student_limit }}" min="0" style="width:120px;" required>
                                     <label class="mb-0"><input type="checkbox" name="is_active" value="1" {{ $plan->is_active ? 'checked' : '' }}> Active</label>
                                     <label class="mb-0"><input type="checkbox" name="is_default" value="1" {{ $plan->is_default ? 'checked' : '' }}> Default</label>
@@ -97,7 +111,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted p-3">No billing plans yet.</td>
+                            <td colspan="8" class="text-center text-muted p-3">No billing plans yet.</td>
                         </tr>
                         @endforelse
                     </tbody>

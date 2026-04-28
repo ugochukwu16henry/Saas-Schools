@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Affiliate;
 use App\Models\AffiliateCommissionLedger;
 use App\Models\AffiliatePayout;
+use App\Models\BillingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -43,8 +44,16 @@ class DashboardController extends Controller
             });
 
         $liveMonthlyProjection = $schools->sum(function ($s) {
-            return $s->billable_count * (int) config('affiliate.monthly_per_billable_student', 20);
+            return $s->billable_count * $s->effectiveAffiliateMonthlyCommissionRate();
         });
+
+        $defaultPlan = BillingPlan::defaultActive();
+        $defaultAffiliateOneTimeRate = $defaultPlan
+            ? (int) $defaultPlan->affiliate_one_time_commission_per_student
+            : BillingPlan::DEFAULT_AFFILIATE_ONE_TIME_COMMISSION_NGN;
+        $defaultAffiliateMonthlyRate = $defaultPlan
+            ? (int) $defaultPlan->affiliate_monthly_commission_per_student
+            : BillingPlan::DEFAULT_AFFILIATE_MONTHLY_COMMISSION_NGN;
 
         $totalEarned = AffiliateCommissionLedger::query()
             ->where('affiliate_id', $affiliate->id)
@@ -100,7 +109,9 @@ class DashboardController extends Controller
             'schoolsByStatus',
             'liveMonthlyProjection',
             'recentLedger',
-            'referralUrl'
+            'referralUrl',
+            'defaultAffiliateOneTimeRate',
+            'defaultAffiliateMonthlyRate'
         ));
     }
 

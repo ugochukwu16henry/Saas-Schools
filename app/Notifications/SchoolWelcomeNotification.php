@@ -33,7 +33,7 @@ class SchoolWelcomeNotification extends Notification
             ->line('1. Log in and complete your school profile (logo, address, contact details)')
             ->line('2. Set up your classes and subjects')
             ->line('3. Invite your teachers and admit your students')
-            ->line('Your first **50 students are completely free** — no billing until you exceed that.')
+            ->line('Your first **' . number_format($this->school->effectiveFreeStudentLimit()) . ' students** are completely free — no billing until you exceed that.')
             ->action('Log In Now', route('login'))
             ->line('Need help? Simply reply to this email and we\'ll be happy to assist.')
             ->salutation('The RiseFlow Team');

@@ -13,9 +13,9 @@ return [
     |
     */
 
-    'one_time_per_new_billable_student' => env('AFFILIATE_ONE_TIME_NGN', 60),
+    'one_time_per_new_billable_student' => env('AFFILIATE_ONE_TIME_NGN', 200),
 
-    'monthly_per_billable_student' => env('AFFILIATE_MONTHLY_NGN', 20),
+    'monthly_per_billable_student' => env('AFFILIATE_MONTHLY_NGN', 100),
 
     'referral_code_length' => 8,
 ];

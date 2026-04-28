@@ -39,6 +39,7 @@
                         <p><strong>Pending payouts:</strong> ₦{{ number_format((float) $pendingPayouts) }}</p>
                         <p><strong>Available to payout:</strong> <span class="font-weight-semibold text-success">₦{{ number_format((float) $availableForPayout) }}</span></p>
                         <p><strong>Referred schools:</strong> {{ number_format($affiliate->schools_count) }}</p>
+                        <p><strong>Default affiliate rates:</strong> Each school follows its assigned billing plan.</p>
                     </div>
                 </div>
                 @if ($affiliate->bio)
@@ -127,22 +128,26 @@
                         <thead>
                             <tr>
                                 <th>School</th>
+                                <th class="text-center">Plan</th>
                                 <th>Status</th>
                                 <th class="text-center">Students</th>
                                 <th class="text-center">Billable</th>
+                                <th class="text-center">Rates</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($schools as $school)
                             <tr>
                                 <td>{{ $school->name }}</td>
+                                <td class="text-center">{{ optional($school->billingPlan)->name ?: 'Standard' }}</td>
                                 <td>{{ $school->status }}</td>
                                 <td class="text-center">{{ $school->students_count }}</td>
                                 <td class="text-center">{{ $school->billable_count }}</td>
+                                <td class="text-center">₦{{ number_format($school->effectiveAffiliateOneTimeCommissionRate()) }} / ₦{{ number_format($school->effectiveAffiliateMonthlyCommissionRate()) }}</td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted p-3">No schools yet.</td>
+                                <td colspan="6" class="text-center text-muted p-3">No schools yet.</td>
                             </tr>
                             @endforelse
                         </tbody>

@@ -64,6 +64,10 @@
                     </div>
                 </div>
 
+                <div class="alert alert-info mb-3">
+                    Current default affiliate rates: ₦{{ number_format($defaultAffiliateOneTimeRate) }} per newly billed student and ₦{{ number_format($defaultAffiliateMonthlyRate) }} monthly per billable student. If a referred school is assigned a different billing plan, that plan's rates apply.
+                </div>
+
                 <div class="row mb-3">
                     <div class="col-md-4 mb-2">
                         <div class="card card-body border-left-primary">
@@ -117,10 +121,12 @@
                                 <thead>
                                     <tr>
                                         <th>School</th>
+                                        <th class="text-center">Plan</th>
                                         <th class="text-center">Status</th>
                                         <th class="text-center">Subscription</th>
                                         <th class="text-center">Students</th>
                                         <th class="text-center">Billable now</th>
+                                        <th class="text-center">Affiliate rates</th>
                                         <th class="text-center">Joined</th>
                                     </tr>
                                 </thead>
@@ -128,6 +134,7 @@
                                     @forelse ($schools as $school)
                                     <tr>
                                         <td>{{ $school->name }}</td>
+                                        <td class="text-center">{{ optional($school->billingPlan)->name ?: 'Standard' }}</td>
                                         <td class="text-center">{{ $school->status }}</td>
                                         <td class="text-center">
                                             @if($school->subscription)
@@ -138,11 +145,12 @@
                                         </td>
                                         <td class="text-center">{{ number_format($school->students_count) }}</td>
                                         <td class="text-center">{{ number_format($school->billable_count) }}</td>
+                                        <td class="text-center">₦{{ number_format($school->effectiveAffiliateOneTimeCommissionRate()) }} / ₦{{ number_format($school->effectiveAffiliateMonthlyCommissionRate()) }}</td>
                                         <td class="text-center">{{ optional($school->created_at)->format('M j, Y') }}</td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted p-4">No referred schools yet. Share your link with school owners.</td>
+                                        <td colspan="8" class="text-center text-muted p-4">No referred schools yet. Share your link with school owners.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>

@@ -29,7 +29,7 @@ class AffiliateCommissionService
             return;
         }
 
-        $school = School::query()->find($schoolId);
+        $school = School::query()->with('billingPlan')->find($schoolId);
         if (! $school || ! $school->affiliate_id) {
             return;
         }
@@ -37,8 +37,8 @@ class AffiliateCommissionService
         $billable = max(0, (int) data_get($data, 'metadata.billable_students', 0));
         $newlyAdded = max(0, (int) data_get($data, 'metadata.newly_added_students', 0));
 
-        $oneTimeRate = (int) config('affiliate.one_time_per_new_billable_student', 60);
-        $monthlyRate = (int) config('affiliate.monthly_per_billable_student', 20);
+        $oneTimeRate = $school->effectiveAffiliateOneTimeCommissionRate();
+        $monthlyRate = $school->effectiveAffiliateMonthlyCommissionRate();
 
         $oneTimeNgn = $newlyAdded * $oneTimeRate;
         $monthlyNgn = $billable * $monthlyRate;

@@ -76,7 +76,7 @@ class School extends Model
             return (int) $this->billingPlan->default_free_student_limit;
         }
 
-        return 50;
+        return BillingPlan::DEFAULT_FREE_STUDENT_LIMIT;
     }
 
     public function effectiveMonthlyRate(): int
@@ -85,7 +85,7 @@ class School extends Model
             return (int) $this->billingPlan->monthly_rate_per_student;
         }
 
-        return 100;
+        return BillingPlan::DEFAULT_MONTHLY_RATE_PER_STUDENT;
     }
 
     public function effectiveOneTimeAddRate(): int
@@ -94,12 +94,30 @@ class School extends Model
             return (int) $this->billingPlan->one_time_add_rate;
         }
 
-        return 500;
+        return BillingPlan::DEFAULT_ONE_TIME_ADD_RATE;
+    }
+
+    public function effectiveAffiliateOneTimeCommissionRate(): int
+    {
+        if ($this->billingPlan) {
+            return (int) $this->billingPlan->affiliate_one_time_commission_per_student;
+        }
+
+        return (int) config('affiliate.one_time_per_new_billable_student', BillingPlan::DEFAULT_AFFILIATE_ONE_TIME_COMMISSION_NGN);
+    }
+
+    public function effectiveAffiliateMonthlyCommissionRate(): int
+    {
+        if ($this->billingPlan) {
+            return (int) $this->billingPlan->affiliate_monthly_commission_per_student;
+        }
+
+        return (int) config('affiliate.monthly_per_billable_student', BillingPlan::DEFAULT_AFFILIATE_MONTHLY_COMMISSION_NGN);
     }
 
     public function isActive(): bool
     {
-        return in_array($this->status, ['active', 'trial']);
+        return in_array($this->status, ['active', 'trial'], true);
     }
 
     public function getLogoAttribute($value)

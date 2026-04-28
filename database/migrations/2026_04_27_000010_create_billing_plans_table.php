@@ -12,8 +12,10 @@ class CreateBillingPlansTable extends Migration
         Schema::create('billing_plans', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name', 120)->unique();
-            $table->unsignedInteger('monthly_rate_per_student')->default(100);
-            $table->unsignedInteger('one_time_add_rate')->default(500);
+            $table->unsignedInteger('monthly_rate_per_student')->default(500);
+            $table->unsignedInteger('one_time_add_rate')->default(1000);
+            $table->unsignedInteger('affiliate_one_time_commission_per_student')->default(200);
+            $table->unsignedInteger('affiliate_monthly_commission_per_student')->default(100);
             $table->unsignedInteger('default_free_student_limit')->default(50);
             $table->boolean('is_active')->default(true);
             $table->boolean('is_default')->default(false);
@@ -24,8 +26,10 @@ class CreateBillingPlansTable extends Migration
 
         DB::table('billing_plans')->insert([
             'name' => 'Standard',
-            'monthly_rate_per_student' => 100,
-            'one_time_add_rate' => 500,
+            'monthly_rate_per_student' => 500,
+            'one_time_add_rate' => 1000,
+            'affiliate_one_time_commission_per_student' => 200,
+            'affiliate_monthly_commission_per_student' => 100,
             'default_free_student_limit' => 50,
             'is_active' => 1,
             'is_default' => 1,

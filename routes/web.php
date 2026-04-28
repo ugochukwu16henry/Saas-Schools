@@ -8,22 +8,23 @@ Route::get('/', function () {
     }
 
     $pricing = [
-        'freeLimit' => 50,
-        'monthlyRate' => 100,
-        'oneTimeRate' => 500,
+        'freeLimit' => \App\Models\BillingPlan::DEFAULT_FREE_STUDENT_LIMIT,
+        'monthlyRate' => \App\Models\BillingPlan::DEFAULT_MONTHLY_RATE_PER_STUDENT,
+        'oneTimeRate' => \App\Models\BillingPlan::DEFAULT_ONE_TIME_ADD_RATE,
+        'affiliateOneTimeRate' => \App\Models\BillingPlan::DEFAULT_AFFILIATE_ONE_TIME_COMMISSION_NGN,
+        'affiliateMonthlyRate' => \App\Models\BillingPlan::DEFAULT_AFFILIATE_MONTHLY_COMMISSION_NGN,
     ];
 
     try {
         if (\Illuminate\Support\Facades\Schema::hasTable('billing_plans')) {
-            $defaultPlan = \App\Models\BillingPlan::query()
-                ->where('is_default', true)
-                ->where('is_active', true)
-                ->first();
+            $defaultPlan = \App\Models\BillingPlan::defaultActive();
 
             if ($defaultPlan) {
                 $pricing['freeLimit'] = (int) $defaultPlan->default_free_student_limit;
                 $pricing['monthlyRate'] = (int) $defaultPlan->monthly_rate_per_student;
                 $pricing['oneTimeRate'] = (int) $defaultPlan->one_time_add_rate;
+                $pricing['affiliateOneTimeRate'] = (int) $defaultPlan->affiliate_one_time_commission_per_student;
+                $pricing['affiliateMonthlyRate'] = (int) $defaultPlan->affiliate_monthly_commission_per_student;
             }
         }
     } catch (\Throwable $e) {

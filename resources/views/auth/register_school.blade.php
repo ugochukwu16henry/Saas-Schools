@@ -9,7 +9,7 @@
                 <aside class="saas-auth-side">
                     <div class="kicker">Start Free</div>
                     <h1>Launch your school portal in minutes.</h1>
-                    <p>First 50 students are free. Add your school details and create your administrator account.</p>
+                    <p>First {{ number_format($freeLimit ?? 50) }} students are free. After that, billing is ₦{{ number_format($oneTimeRate ?? 1000) }} per newly added student and ₦{{ number_format($monthlyRate ?? 500) }} monthly per student.</p>
 
                     <ol class="step-list">
                         <li>Create account</li>

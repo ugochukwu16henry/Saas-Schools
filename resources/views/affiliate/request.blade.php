@@ -8,7 +8,7 @@
                 <aside class="saas-auth-side d-none d-md-block">
                     <div class="kicker">RiseFlow Affiliate Program</div>
                     <h1>Refer schools. Earn when they grow.</h1>
-                    <p>Share your referral link with school leaders. When their school pays successfully through Paystack, you earn from billable students according to the published rates.</p>
+                    <p>Share your referral link with school leaders. When their school pays successfully through Paystack, you earn ₦{{ number_format($affiliateOneTimeRate ?? 200) }} for each newly billed student and ₦{{ number_format($affiliateMonthlyRate ?? 100) }} monthly for each billable student.</p>
                     <ul class="step-list">
                         <li>Submit your details (optional KYC photo)</li>
                         <li>Platform admin reviews and approves</li>

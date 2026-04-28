@@ -24,8 +24,20 @@ class SchoolRegistrationController extends Controller
         }
 
         $registrationRef = $request->session()->get('school_registration_ref');
+        $defaultPlan = BillingPlan::defaultActive();
 
-        return view('auth.register_school', ['registration_ref' => $registrationRef]);
+        return view('auth.register_school', [
+            'registration_ref' => $registrationRef,
+            'freeLimit' => $defaultPlan
+                ? (int) $defaultPlan->default_free_student_limit
+                : BillingPlan::DEFAULT_FREE_STUDENT_LIMIT,
+            'monthlyRate' => $defaultPlan
+                ? (int) $defaultPlan->monthly_rate_per_student
+                : BillingPlan::DEFAULT_MONTHLY_RATE_PER_STUDENT,
+            'oneTimeRate' => $defaultPlan
+                ? (int) $defaultPlan->one_time_add_rate
+                : BillingPlan::DEFAULT_ONE_TIME_ADD_RATE,
+        ]);
     }
 
     public function store(Request $request)
@@ -43,10 +55,7 @@ class SchoolRegistrationController extends Controller
         DB::transaction(function () use ($request, &$newUser, &$newSchool) {
             $referral = trim((string) ($request->input('ref') ?: $request->session()->get('school_registration_ref')));
             $affiliateId = app(AffiliateReferralService::class)->resolveAffiliateId($referral !== '' ? $referral : null);
-            $defaultPlan = BillingPlan::query()
-                ->where('is_default', true)
-                ->where('is_active', true)
-                ->first();
+            $defaultPlan = BillingPlan::defaultActive();
 
             // Create the school record
             $newSchool = $school = School::create([
@@ -54,7 +63,7 @@ class SchoolRegistrationController extends Controller
                 'slug'               => $this->uniqueSlug($request->school_name),
                 'email'              => $request->email,
                 'status'             => 'trial',
-                'free_student_limit' => (int) ($defaultPlan->default_free_student_limit ?? 50),
+                'free_student_limit' => (int) ($defaultPlan->default_free_student_limit ?? BillingPlan::DEFAULT_FREE_STUDENT_LIMIT),
                 'billing_plan_id'    => $defaultPlan ? $defaultPlan->id : null,
                 'affiliate_id'       => $affiliateId,
                 'affiliate_attributed_at' => $affiliateId ? now() : null,
@@ -112,8 +121,12 @@ class SchoolRegistrationController extends Controller
             app(PlatformNotificationService::class)->schoolRegistered($newSchool, $newUser);
         }
 
+        $freeStudentLimit = $newSchool
+            ? $newSchool->effectiveFreeStudentLimit()
+            : BillingPlan::DEFAULT_FREE_STUDENT_LIMIT;
+
         return redirect()->route('login')
-            ->with('status', 'School registered successfully! Login to get started. Your first 50 students are free.');
+            ->with('status', 'School registered successfully! Login to get started. Your first ' . number_format($freeStudentLimit) . ' students are free.');
     }
 
     private function uniqueSlug(string $name): string

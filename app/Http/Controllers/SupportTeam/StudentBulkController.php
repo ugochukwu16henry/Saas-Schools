@@ -160,11 +160,12 @@ class StudentBulkController extends Controller
         $school = app('currentSchool');
         $studentCount = $school->users()->where('user_type', 'student')->count();
         $n = count($rowData);
-        if ($studentCount + $n > $school->free_student_limit) {
+        $freeLimit = $school->effectiveFreeStudentLimit();
+        if ($studentCount + $n > $freeLimit) {
             $sub = $school->subscription;
             if (! $sub || ! $sub->isActive()) {
                 return $this->bulkImportRedirect($request)
-                    ->with('flash_danger', 'Importing ' . $n . ' student(s) would exceed your free student limit (' . $school->free_student_limit . ') without an active subscription. Please subscribe or reduce the number of rows. You can manage billing from your dashboard.')
+                    ->with('flash_danger', 'Importing ' . $n . ' student(s) would exceed your free student limit (' . $freeLimit . ') without an active subscription. Please subscribe or reduce the number of rows. You can manage billing from your dashboard.')
                     ->with('billing_required', true);
             }
         }

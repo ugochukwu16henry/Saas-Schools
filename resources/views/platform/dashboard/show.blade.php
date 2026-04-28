@@ -62,6 +62,14 @@
                         <td>₦{{ number_format($school->effectiveOneTimeAddRate()) }} / student</td>
                     </tr>
                     <tr>
+                        <th>Affiliate Upload Commission</th>
+                        <td>₦{{ number_format($school->effectiveAffiliateOneTimeCommissionRate()) }} / student</td>
+                    </tr>
+                    <tr>
+                        <th>Affiliate Monthly Commission</th>
+                        <td>₦{{ number_format($school->effectiveAffiliateMonthlyCommissionRate()) }} / student</td>
+                    </tr>
+                    <tr>
                         <th>Created</th>
                         <td>{{ optional($school->created_at)->format('d M Y h:i A') }}</td>
                     </tr>
@@ -129,7 +137,7 @@
                     </tr>
                     <tr>
                         <th>Billable Students</th>
-                        <td>{{ number_format(max(0, $school->students_count - $school->free_student_limit)) }}</td>
+                        <td>{{ number_format(max(0, $school->students_count - $school->effectiveFreeStudentLimit())) }}</td>
                     </tr>
 
                     @if($school->subscription)
@@ -264,7 +272,7 @@
                                 <select name="billing_plan_id" class="form-control @error('billing_plan_id') is-invalid @enderror" required>
                                     @foreach($billingPlans as $plan)
                                     <option value="{{ $plan->id }}" {{ (int) old('billing_plan_id', $school->billing_plan_id) === (int) $plan->id ? 'selected' : '' }}>
-                                        {{ $plan->name }} (₦{{ number_format($plan->monthly_rate_per_student) }}/m, ₦{{ number_format($plan->one_time_add_rate) }} one-time, free {{ number_format($plan->default_free_student_limit) }})
+                                        {{ $plan->name }} (₦{{ number_format($plan->monthly_rate_per_student) }}/m, ₦{{ number_format($plan->one_time_add_rate) }} upload, free {{ number_format($plan->default_free_student_limit) }}, affiliate ₦{{ number_format($plan->affiliate_one_time_commission_per_student) }}/₦{{ number_format($plan->affiliate_monthly_commission_per_student) }})
                                     </option>
                                     @endforeach
                                 </select>
