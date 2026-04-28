@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class MyController extends Controller
 {
-    protected $student;
+    protected StudentRepo $student;
 
     public function __construct(StudentRepo $student)
     {

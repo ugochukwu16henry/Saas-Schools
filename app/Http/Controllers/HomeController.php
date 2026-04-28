@@ -9,7 +9,8 @@ use App\Services\StudentQrService;
 
 class HomeController extends Controller
 {
-    protected $user;
+    protected UserRepo $user;
+
     public function __construct(UserRepo $user)
     {
         $this->user = $user;
