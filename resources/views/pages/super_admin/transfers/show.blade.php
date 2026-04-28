@@ -56,6 +56,44 @@
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <div class="border rounded p-3">
+                    <h6 class="font-weight-semibold mb-2">Transfer Audit Timeline</h6>
+                    <ul class="mb-0 pl-3">
+                        <li class="mb-1">
+                            <strong>Requested</strong>
+                            by {{ optional(optional($transfer)->requestedBy)->name ?: 'N/A' }}
+                            on {{ optional(optional($transfer)->created_at)->toDateTimeString() ?: 'N/A' }}
+                        </li>
+                        @if(optional($transfer)->status === 'accepted')
+                        <li class="mb-1">
+                            <strong>Accepted</strong>
+                            by {{ optional(optional($transfer)->acceptedBy)->name ?: 'N/A' }}
+                            on {{ optional(optional($transfer)->transferred_at)->toDateTimeString() ?: optional(optional($transfer)->updated_at)->toDateTimeString() ?: 'N/A' }}
+                        </li>
+                        @endif
+                        @if(optional($transfer)->status === 'rejected')
+                        <li class="mb-1">
+                            <strong>Rejected</strong>
+                            by {{ optional(optional($transfer)->acceptedBy)->name ?: 'N/A' }}
+                            on {{ optional(optional($transfer)->updated_at)->toDateTimeString() ?: 'N/A' }}
+                            @if(optional($transfer)->rejected_reason)
+                            with reason: {{ optional($transfer)->rejected_reason }}
+                            @endif
+                        </li>
+                        @endif
+                        @if(optional($transfer)->status === 'cancelled')
+                        <li>
+                            <strong>Cancelled</strong>
+                            on {{ optional(optional($transfer)->updated_at)->toDateTimeString() ?: 'N/A' }}
+                        </li>
+                        @endif
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <div class="row mb-3">
             <div class="col-md-12">
                 <div class="border rounded p-3">
@@ -152,11 +190,30 @@
         $isSendingSchool = (int) optional($school)->id === (int) optional($transfer)->from_school_id;
         @endphp
 
+        @if(optional($transfer)->status === 'pending' && $isReceivingSchool)
+        <div class="alert alert-warning border mb-3">
+            <h6 class="font-weight-semibold mb-2">Verification Checklist (Required Before Accept)</h6>
+            <div class="form-check mb-1">
+                <input class="form-check-input transfer-verify-check" type="checkbox" id="verify-photo">
+                <label class="form-check-label" for="verify-photo">I confirmed student photo and full name match the profile.</label>
+            </div>
+            <div class="form-check mb-1">
+                <input class="form-check-input transfer-verify-check" type="checkbox" id="verify-parent">
+                <label class="form-check-label" for="verify-parent">I reviewed parent/guardian names and phone numbers.</label>
+            </div>
+            <div class="form-check mb-1">
+                <input class="form-check-input transfer-verify-check" type="checkbox" id="verify-academic">
+                <label class="form-check-label" for="verify-academic">I reviewed class/session and academic reports.</label>
+            </div>
+            <small class="text-muted">Accept button stays disabled until all checks are completed.</small>
+        </div>
+        @endif
+
         <div class="d-flex flex-wrap align-items-start">
             @if(optional($transfer)->status === 'pending' && $isReceivingSchool)
             <form method="post" action="{{ route('transfers.accept', $transfer) }}" class="mr-2 mb-2">
                 @csrf @method('PATCH')
-                <button type="submit" class="btn btn-success btn-sm">Accept Transfer</button>
+                <button type="submit" id="accept-transfer-btn" class="btn btn-success btn-sm" disabled>Accept Transfer</button>
             </form>
 
             <form method="post" action="{{ route('transfers.reject', $transfer) }}" class="mr-2 mb-2">
@@ -175,4 +232,30 @@
         </div>
     </div>
 </div>
+
+@if(optional($transfer)->status === 'pending' && $isReceivingSchool)
+<script>
+    (function() {
+        var checks = Array.prototype.slice.call(document.querySelectorAll('.transfer-verify-check'));
+        var acceptBtn = document.getElementById('accept-transfer-btn');
+
+        if (!checks.length || !acceptBtn) {
+            return;
+        }
+
+        function syncAcceptState() {
+            var allChecked = checks.every(function(check) {
+                return check.checked;
+            });
+            acceptBtn.disabled = !allChecked;
+        }
+
+        checks.forEach(function(check) {
+            check.addEventListener('change', syncAcceptState);
+        });
+
+        syncAcceptState();
+    })();
+</script>
+@endif
 @endsection

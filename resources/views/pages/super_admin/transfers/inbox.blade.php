@@ -25,6 +25,9 @@
                 </thead>
                 <tbody>
                     @forelse($transfers as $transfer)
+                    @php
+                    $previewId = 'incoming-preview-' . $transfer->id;
+                    @endphp
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
@@ -45,6 +48,7 @@
                         <td>{{ optional($transfer->requestedBy)->name }}</td>
                         <td>{{ optional($transfer->created_at)->toDateTimeString() }}</td>
                         <td>
+                            <button type="button" class="btn btn-light btn-sm mb-1" data-toggle="collapse" data-target="#{{ $previewId }}" aria-expanded="false" aria-controls="{{ $previewId }}">Quick Preview</button>
                             <a href="{{ route('transfers.show', $transfer) }}" class="btn btn-primary btn-sm mb-1">View Details</a>
 
                             @if($transfer->status === 'pending')
@@ -61,6 +65,30 @@
                             @else
                             <span class="text-muted">No actions</span>
                             @endif
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="{{ $previewId }}">
+                        <td colspan="8" class="bg-light">
+                            <div class="row py-2">
+                                <div class="col-md-4 mb-2">
+                                    <strong>Student:</strong> {{ optional($transfer->student)->name ?: 'N/A' }}<br>
+                                    <strong>Code:</strong> {{ optional($transfer->student)->code ?: 'N/A' }}<br>
+                                    <strong>Photo:</strong><br>
+                                    <img src="{{ optional($transfer->student)->photo }}" alt="Student photo" class="rounded border mt-1" style="height:60px;width:60px;object-fit:cover;">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <strong>Parent:</strong> {{ optional(optional(optional($transfer->student)->student_record)->my_parent)->name ?: 'N/A' }}<br>
+                                    <strong>Parent Phone:</strong> {{ optional(optional(optional($transfer->student)->student_record)->my_parent)->phone ?: 'N/A' }}<br>
+                                    <strong>Class:</strong>
+                                    {{ optional(optional(optional($transfer->student)->student_record)->my_class)->name ?: 'N/A' }}
+                                    {{ optional(optional(optional($transfer->student)->student_record)->section)->name ?: '' }}
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <strong>From School:</strong> {{ optional($transfer->fromSchool)->name ?: 'N/A' }}<br>
+                                    <strong>Requested By:</strong> {{ optional($transfer->requestedBy)->name ?: 'N/A' }}<br>
+                                    <strong>Note:</strong> {{ $transfer->transfer_note ?: 'N/A' }}
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     @empty
