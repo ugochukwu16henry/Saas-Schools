@@ -53,6 +53,53 @@ class HomeController extends Controller
                 'monthly_rate' => $school->effectiveMonthlyRate(),
                 'one_time_rate' => $school->effectiveOneTimeAddRate(),
             ];
+
+            $receivedWindow = (string) request()->query('received_window', '7');
+            if (!in_array($receivedWindow, ['7', '30', 'all'], true)) {
+                $receivedWindow = '7';
+            }
+
+            $receivedTransfersQuery = StudentTransfer::query()
+                ->with([
+                    'student.student_record.my_class',
+                    'student.student_record.section',
+                    'student.student_record.my_parent',
+                    'fromSchool:id,name',
+                    'acceptedBy:id,name',
+                ])
+                ->where('to_school_id', (int) $school->id)
+                ->where('status', StudentTransfer::STATUS_ACCEPTED);
+
+            if ($receivedWindow !== 'all') {
+                $days = (int) $receivedWindow;
+                $cutoff = now()->subDays($days);
+
+                $receivedTransfersQuery->where(function ($query) use ($cutoff) {
+                    $query->where(function ($q) use ($cutoff) {
+                        $q->whereNotNull('transferred_at')
+                            ->where('transferred_at', '>=', $cutoff);
+                    })->orWhere(function ($q) use ($cutoff) {
+                        $q->whereNull('transferred_at')
+                            ->where('updated_at', '>=', $cutoff);
+                    });
+                });
+            }
+
+            $d['recentlyReceivedTransfers'] = $receivedTransfersQuery
+                ->latest('transferred_at')
+                ->limit(10)
+                ->get();
+            $d['receivedWindow'] = $receivedWindow;
+
+            $receivedTransferQrTokens = [];
+            $qrService = app(StudentQrService::class);
+            foreach (($d['recentlyReceivedTransfers'] ?? collect()) as $transfer) {
+                $receivedStudent = $transfer->student;
+                if ($receivedStudent) {
+                    $receivedTransferQrTokens[(int) $receivedStudent->id] = $qrService->ensureTokenForStudent($receivedStudent)->token;
+                }
+            }
+            $d['receivedTransferQrTokens'] = $receivedTransferQrTokens;
         }
 
         if (Qs::userIsStudent()) {

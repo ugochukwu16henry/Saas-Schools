@@ -128,6 +128,85 @@
 </div>
 @endif
 
+@if(Qs::userIsTeamSA() && isset($recentlyReceivedTransfers))
+<div class="card mb-3">
+    <div class="card-header header-elements-inline">
+        <h6 class="card-title font-weight-semibold">Newly Received Students</h6>
+        <div class="d-flex align-items-center" style="gap:8px;">
+            <a href="{{ route('dashboard', ['received_window' => '7']) }}" class="btn btn-sm {{ ($receivedWindow ?? '7') === '7' ? 'btn-primary' : 'btn-light' }}">Last 7 days</a>
+            <a href="{{ route('dashboard', ['received_window' => '30']) }}" class="btn btn-sm {{ ($receivedWindow ?? '7') === '30' ? 'btn-primary' : 'btn-light' }}">Last 30 days</a>
+            <a href="{{ route('dashboard', ['received_window' => 'all']) }}" class="btn btn-sm {{ ($receivedWindow ?? '7') === 'all' ? 'btn-primary' : 'btn-light' }}">All</a>
+            <span class="badge badge-success">{{ $recentlyReceivedTransfers->count() }}</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Use this list to confirm identity before/after admission updates.</p>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Previous School</th>
+                        <th>Parent</th>
+                        <th>Class</th>
+                        <th>Transferred At</th>
+                        <th style="width: 300px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentlyReceivedTransfers as $transfer)
+                    @php
+                    $receivedStudent = $transfer->student;
+                    $studentRecord = optional($receivedStudent)->student_record;
+                    $studentRecordId = optional($studentRecord)->id;
+                    $verifyToken = $receivedTransferQrTokens[optional($receivedStudent)->id] ?? null;
+                    @endphp
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img class="rounded-circle mr-2" style="height: 40px; width: 40px; object-fit: cover;" src="{{ optional($receivedStudent)->photo }}" alt="photo">
+                                <div>
+                                    <div class="font-weight-semibold">{{ optional($receivedStudent)->name ?: 'N/A' }}</div>
+                                    <small class="text-muted">{{ optional($receivedStudent)->code ?: 'N/A' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ optional($transfer->fromSchool)->name ?: 'N/A' }}</td>
+                        <td>
+                            {{ optional(optional($studentRecord)->my_parent)->name ?: 'N/A' }}
+                            <br>
+                            <small class="text-muted">{{ optional(optional($studentRecord)->my_parent)->phone ?: 'N/A' }}</small>
+                        </td>
+                        <td>
+                            {{ optional(optional($studentRecord)->my_class)->name ?: 'N/A' }}
+                            {{ optional(optional($studentRecord)->section)->name ?: '' }}
+                        </td>
+                        <td>{{ optional($transfer->transferred_at)->toDateTimeString() ?: optional($transfer->updated_at)->toDateTimeString() }}</td>
+                        <td>
+                            <a href="{{ route('transfers.show', $transfer) }}" class="btn btn-sm btn-primary mb-1">Transfer Details</a>
+                            @if($studentRecordId)
+                            <a href="{{ route('students.show', Qs::hash($studentRecordId)) }}" class="btn btn-sm btn-outline-primary mb-1">Profile</a>
+                            @endif
+                            @if(optional($receivedStudent)->id)
+                            <a href="{{ route('students.transcript.show', $receivedStudent->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1">Transcript</a>
+                            @endif
+                            @if($verifyToken)
+                            <a href="{{ route('students.verify.public', $verifyToken) }}" target="_blank" class="btn btn-sm btn-outline-success mb-1">Verify</a>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No received transfers for this period.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@endif
+
 {{--Events Calendar Begins--}}
 <div class="card">
     <div class="card-header header-elements-inline">
