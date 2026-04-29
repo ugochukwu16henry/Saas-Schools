@@ -174,6 +174,71 @@ class StudentTransferPhase4Test extends TestCase
         $this->assertSame($fromSchool->id, (int) $student->fresh()->school_id);
     }
 
+    public function testAcceptTransferAllowsDeferClassAssignmentWhenDestinationClassMissing()
+    {
+        $fromSchool = $this->createSchool('From School', 'from-school3', 'from3@example.test');
+        $toSchool = $this->createSchool('To School', 'to-school3', 'to3@example.test');
+
+        // Destination class/section NOT created yet.
+        $this->bindSchool($fromSchool);
+
+        $fromClass = MyClass::query()->create(['name' => 'Upper Resection']);
+        $fromSection = Section::query()->create([
+            'name' => 'Blue',
+            'my_class_id' => $fromClass->id,
+            'active' => 1,
+        ]);
+
+        $student = $this->createUser('Defer Class Student', 'defer-class-student@example.test', 'student', $fromSchool->id);
+        StudentRecord::query()->create([
+            'user_id' => $student->id,
+            'my_class_id' => $fromClass->id,
+            'section_id' => $fromSection->id,
+            'session' => '2025/2026',
+            'adm_no' => 'ADM-' . strtoupper(substr(uniqid('', true), -6)),
+        ]);
+
+        $parent = $this->createUser('Defer Class Parent', 'defer-class-parent@example.test', 'parent', $fromSchool->id);
+
+        $requestedBy = $this->createUser('Requested By', 'requested-by3@example.test', 'super_admin', $fromSchool->id);
+        $acceptedBy = $this->createUser('Accepted By', 'accepted-by3@example.test', 'super_admin', $toSchool->id);
+
+        $transfer = StudentTransfer::query()->create([
+            'student_id' => $student->id,
+            'from_school_id' => $fromSchool->id,
+            'to_school_id' => $toSchool->id,
+            'requested_by' => $requestedBy->id,
+            'status' => StudentTransfer::STATUS_PENDING,
+            'from_class_id' => $fromClass->id,
+            'from_section_id' => $fromSection->id,
+            'from_session' => '2025/2026',
+            'transfer_snapshot' => [
+                'student' => [
+                    'name' => $student->name,
+                    'code' => $student->code,
+                ],
+                'parent' => [
+                    'name' => $parent->name,
+                ],
+                'academic' => [
+                    'class_name' => 'Upper Resection',
+                    'section_name' => 'Blue',
+                ],
+            ],
+            'status_history' => [
+                ['event' => 'requested', 'status' => 'pending', 'at' => now()->toDateTimeString()],
+            ],
+        ]);
+
+        $service = app(StudentTransferService::class);
+
+        // Defer class assignment should prevent mapping exceptions.
+        $service->acceptTransfer($transfer, $acceptedBy, true);
+
+        $this->assertSame(StudentTransfer::STATUS_ACCEPTED, (string) $transfer->fresh()->status);
+        $this->assertSame($toSchool->id, (int) $student->fresh()->school_id);
+    }
+
     public function testTransferInboxRendersStudentPhotoFromSendingSchool()
     {
         $fromSchool = $this->createSchool('From School', 'from-school', 'from@example.test');

@@ -238,6 +238,12 @@
             <form method="post" action="{{ route('transfers.accept', $transfer) }}" class="mr-2 mb-2">
                 @csrf @method('PATCH')
                 <input type="hidden" name="acceptance_checklist" id="acceptance-checklist" value="0">
+                <div class="form-check mt-2 mb-1">
+                    <input class="form-check-input" type="checkbox" id="defer-class-assignment" name="defer_class_assignment" value="1">
+                    <label class="form-check-label" for="defer-class-assignment">
+                        If destination class isn’t created yet, accept now and assign class later.
+                    </label>
+                </div>
                 <button type="submit" id="accept-transfer-btn" class="btn btn-success btn-sm" disabled>Accept Transfer</button>
             </form>
 

@@ -175,9 +175,9 @@ class StudentTransferService
         return $transfer;
     }
 
-    public function acceptTransfer(StudentTransfer $transfer, User $acceptedBy): StudentTransfer
+    public function acceptTransfer(StudentTransfer $transfer, User $acceptedBy, bool $deferClassAssignment = false): StudentTransfer
     {
-        DB::transaction(function () use ($transfer, $acceptedBy): void {
+        DB::transaction(function () use ($transfer, $acceptedBy, $deferClassAssignment): void {
             $lockedTransfer = StudentTransfer::query()->lockForUpdate()->findOrFail($transfer->id);
 
             if ($lockedTransfer->status !== StudentTransfer::STATUS_PENDING) {
@@ -201,6 +201,11 @@ class StudentTransferService
             }
 
             $strictMapping = (bool) config('transfers.policies.require_destination_mapping', true);
+            // When a receiving school hasn't created the destination class/section yet, allow
+            // accepting the student now and assigning class later.
+            if ($deferClassAssignment) {
+                $strictMapping = false;
+            }
             $placement = $this->resolveDestinationPlacement($lockedTransfer, $toSchoolId, $strictMapping);
 
             User::withoutGlobalScopes()

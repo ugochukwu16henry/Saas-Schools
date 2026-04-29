@@ -258,9 +258,12 @@ class StudentTransferController extends Controller
 
     public function accept(Request $request, StudentTransfer $transfer)
     {
+        $deferClassAssignment = (bool) $request->boolean('defer_class_assignment');
+
         if ((bool) config('transfers.policies.require_acceptance_checklist', true)) {
             $request->validate([
                 'acceptance_checklist' => ['required', 'in:1'],
+                'defer_class_assignment' => ['sometimes', 'boolean'],
             ], [
                 'acceptance_checklist.required' => 'Policy requires checklist completion before acceptance.',
                 'acceptance_checklist.in' => 'Policy requires checklist completion before acceptance.',
@@ -268,7 +271,7 @@ class StudentTransferController extends Controller
         }
 
         try {
-            $this->transferService->acceptTransfer($transfer, auth()->user());
+            $this->transferService->acceptTransfer($transfer, auth()->user(), $deferClassAssignment);
         } catch (RuntimeException $e) {
             return back()->withErrors(['transfer' => $e->getMessage()]);
         }
