@@ -88,7 +88,7 @@ class StudentTransferService
         try {
             $token = app(StudentQrService::class)->ensureTokenForStudent($student)->token;
             if ($token) {
-                $verificationUrl = route('students.verify.public', $token);
+                $verificationUrl = route('students.verify.proof', $token);
             }
         } catch (Throwable $e) {
             $verificationUrl = null;

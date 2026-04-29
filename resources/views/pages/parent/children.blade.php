@@ -44,12 +44,12 @@
                     <td>{{ $s->user->email }}</td>
                     <td>
                         @if($qrToken)
-                        <a target="_blank" href="{{ route('students.verify.public', $qrToken) }}" class="btn btn-sm btn-outline-primary">Verify</a>
+                        <a target="_blank" href="{{ route('students.verify.proof', $qrToken) }}" class="btn btn-sm btn-outline-primary">Verify</a>
                         <button
                             type="button"
                             class="btn btn-sm btn-outline-secondary ml-1 js-show-student-qr"
                             data-student-name="{{ $s->user->name }}"
-                            data-verify-url="{{ route('students.verify.public', $qrToken) }}"
+                            data-verify-url="{{ route('students.verify.proof', $qrToken) }}"
                         >
                             QR
                         </button>

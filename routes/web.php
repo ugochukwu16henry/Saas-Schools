@@ -116,6 +116,7 @@ Route::get('/storage/{path}', function ($path) {
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
 Route::get('/verify/student/{token}', 'Public\StudentVerificationController@show')->name('students.verify.public');
+Route::get('/verify/student/{token}/proof', 'Public\StudentVerificationController@proof')->name('students.verify.proof');
 
 // School self-registration (public)
 Route::get('/register/school', 'SchoolRegistrationController@create')->name('school.register');

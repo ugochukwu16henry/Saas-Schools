@@ -89,8 +89,8 @@
         @if(!empty($studentQrToken))
         <div class="alert alert-info alert-styled-left py-2">
             <span class="font-weight-semibold">Student Verification Link:</span>
-            <a href="{{ route('students.verify.public', $studentQrToken) }}" target="_blank">
-                {{ route('students.verify.public', $studentQrToken) }}
+            <a href="{{ route('students.verify.proof', $studentQrToken) }}" target="_blank">
+                {{ route('students.verify.proof', $studentQrToken) }}
             </a>
         </div>
         @endif
@@ -343,7 +343,7 @@
                             <a href="{{ route('students.transcript.show', $receivedStudent->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1">Transcript</a>
                             @endif
                             @if($verifyToken)
-                            <a href="{{ route('students.verify.public', $verifyToken) }}" target="_blank" class="btn btn-sm btn-outline-success mb-1">Verify</a>
+                            <a href="{{ route('students.verify.proof', $verifyToken) }}" target="_blank" class="btn btn-sm btn-outline-success mb-1">Verify</a>
                             @endif
                         </td>
                     </tr>

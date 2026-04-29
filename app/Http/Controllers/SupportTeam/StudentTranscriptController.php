@@ -18,7 +18,7 @@ class StudentTranscriptController extends Controller
 
         $data = $transcriptService->build($student);
         $token = $qrService->ensureTokenForStudent($student)->token;
-        $data['verifyUrl'] = route('students.verify.public', $token);
+        $data['verifyUrl'] = route('students.verify.proof', $token);
 
         return view('pages.support_team.students.transcript', $data);
     }
@@ -29,7 +29,7 @@ class StudentTranscriptController extends Controller
 
         $data = $transcriptService->build($student);
         $token = $qrService->ensureTokenForStudent($student)->token;
-        $data['verifyUrl'] = route('students.verify.public', $token);
+        $data['verifyUrl'] = route('students.verify.proof', $token);
 
         $filename = 'Transcript_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) $student->name) . '.pdf';
 
