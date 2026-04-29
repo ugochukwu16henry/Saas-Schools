@@ -278,7 +278,7 @@
 
 @section('scripts')
 @if(!empty($verificationUrl))
-<script src="{{ asset('global_assets/js/plugins/qrcodejs/qrcode.min.js') }}"></script>
+<script src="{{ asset('global_assets/js/plugins/qrcodejs/qrcode.min.js') }}?v=20260429"></script>
 <script>
     (function() {
         var el = document.getElementById('transfer-student-qrcode');

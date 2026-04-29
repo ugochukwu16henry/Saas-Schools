@@ -48,7 +48,7 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('global_assets/js/plugins/qrcodejs/qrcode.min.js') }}"></script>
+<script src="{{ asset('global_assets/js/plugins/qrcodejs/qrcode.min.js') }}?v=20260429"></script>
 <script>
     (function() {
         var el = document.getElementById('student-verification-qrcode');
