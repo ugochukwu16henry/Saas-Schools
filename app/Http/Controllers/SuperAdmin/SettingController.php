@@ -23,6 +23,7 @@ class SettingController extends Controller
 
     public function index()
     {
+        $this->ensureSchoolContext();
         $s = $this->setting->all();
         $d['class_types'] = $this->my_class->getTypes();
         $d['s'] = $s->flatMap(function ($s) {
@@ -33,18 +34,7 @@ class SettingController extends Controller
 
     public function update(SettingUpdate $req)
     {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-        if (! $school) {
-            // Ensure tenant scoping exists for settings writes.
-            $fallbackSchoolId = optional(auth()->user())->school_id;
-            if ($fallbackSchoolId) {
-                $school = School::query()->find((int) $fallbackSchoolId);
-                if ($school) {
-                    app()->instance('currentSchool', $school);
-                    view()->share('currentSchool', $school);
-                }
-            }
-        }
+        $school = $this->ensureSchoolContext();
 
         $sets = $req->except('_token', '_method', 'logo');
         $sets['lock_exam'] = $sets['lock_exam'] == 1 ? 1 : 0;
@@ -107,5 +97,27 @@ class SettingController extends Controller
         }
 
         return back()->with('flash_success', __('msg.update_ok'));
+    }
+
+    private function ensureSchoolContext(): ?School
+    {
+        if (app()->bound('currentSchool')) {
+            return app('currentSchool');
+        }
+
+        $schoolId = (int) (optional(auth()->user())->school_id ?? 0);
+        if ($schoolId <= 0) {
+            return null;
+        }
+
+        $school = School::query()->find($schoolId);
+        if (!$school) {
+            return null;
+        }
+
+        app()->instance('currentSchool', $school);
+        view()->share('currentSchool', $school);
+
+        return $school;
     }
 }

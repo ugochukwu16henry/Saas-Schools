@@ -9,7 +9,11 @@ class SettingRepo
 {
     public function update($type, $desc)
     {
-        return Setting::where('type', $type)->update(['description' => $desc]);
+        // Upsert to avoid "missing setting row" cases per tenant.
+        return Setting::updateOrCreate(
+            ['type' => $type],
+            ['description' => $desc]
+        );
     }
 
     public function getSetting($type)
