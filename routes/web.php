@@ -55,30 +55,61 @@ Route::get('/healthz', function () {
 
 // Fallback for environments where public/storage symlink is missing.
 Route::get('/storage/{path}', function ($path) {
-    $storageRoot = realpath(storage_path('app/public'));
-    $target = storage_path('app/public/' . ltrim((string) $path, '/'));
-    $resolved = realpath($target);
-    $isWindows = DIRECTORY_SEPARATOR === '\\';
+    $pathClean = ltrim((string) $path, '/');
+    $pathCleanNorm = str_replace('\\', '/', $pathClean);
 
+    // Allowed folders only (prevents serving arbitrary files from storage).
+    $allowedPrefixes = [
+        'uploads/',
+        'affiliate-applications/',
+        'affiliate-profiles/',
+    ];
+
+    $isAllowed = false;
+    foreach ($allowedPrefixes as $prefix) {
+        if (str_starts_with($pathCleanNorm, $prefix)) {
+            $isAllowed = true;
+            break;
+        }
+    }
+
+    if (! $isAllowed) {
+        abort(404);
+    }
+
+    $isWindows = DIRECTORY_SEPARATOR === '\\';
     $normalize = static function (?string $value) use ($isWindows): string {
         $normalized = str_replace('\\', '/', (string) $value);
         return $isWindows ? strtolower($normalized) : $normalized;
     };
 
-    $rootNorm = rtrim($normalize($storageRoot), '/');
-    $resolvedNorm = $normalize($resolved);
-    $insideStorageRoot = $rootNorm !== '' && $resolvedNorm !== '' && strpos($resolvedNorm, $rootNorm . '/') === 0;
+    // First, try the correct public disk location: storage/app/public/...
+    $storageRootPublic = realpath(storage_path('app/public'));
+    $targetPublic = storage_path('app/public/' . $pathCleanNorm);
+    $resolvedPublic = realpath($targetPublic);
 
-    if (
-        !$storageRoot ||
-        !$resolved ||
-        !$insideStorageRoot ||
-        !is_file($resolved)
-    ) {
-        abort(404);
+    $rootNormPublic = rtrim($normalize($storageRootPublic), '/');
+    $resolvedNormPublic = $normalize($resolvedPublic);
+    $insidePublic = $rootNormPublic !== '' && $resolvedNormPublic !== '' && strpos($resolvedNormPublic, $rootNormPublic . '/') === 0;
+
+    if ($storageRootPublic && $resolvedPublic && $insidePublic && is_file($resolvedPublic)) {
+        return response()->file($resolvedPublic);
     }
 
-    return response()->file($resolved);
+    // Backward compatibility for older uploads stored under storage/app/...
+    $storageRootApp = realpath(storage_path('app'));
+    $targetApp = storage_path('app/' . $pathCleanNorm);
+    $resolvedApp = realpath($targetApp);
+
+    $rootNormApp = rtrim($normalize($storageRootApp), '/');
+    $resolvedNormApp = $normalize($resolvedApp);
+    $insideApp = $rootNormApp !== '' && $resolvedNormApp !== '' && strpos($resolvedNormApp, $rootNormApp . '/') === 0;
+
+    if ($storageRootApp && $resolvedApp && $insideApp && is_file($resolvedApp)) {
+        return response()->file($resolvedApp);
+    }
+
+    abort(404);
 })->where('path', '.*');
 
 //Route::get('/test', 'TestController@index')->name('test');

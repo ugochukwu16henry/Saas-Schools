@@ -13,8 +13,6 @@ class SettingsTableSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('settings')->delete();
-
         $data = [
             ['type' => 'current_session', 'description' => '2018-2019'],
             ['type' => 'system_title', 'description' => 'RiseFlow'],
@@ -36,8 +34,17 @@ class SettingsTableSeeder extends Seeder
             ['type' => 'next_term_fees_s', 'description' => '15600'],
             ['type' => 'next_term_fees_c', 'description' => '1600'],
         ];
+        // Do not wipe production settings (including the saved `logo`).
+        // This seeder is safe to re-run: it inserts defaults only when a setting type is missing.
+        foreach ($data as $row) {
+            $exists = DB::table('settings')
+                ->where('type', $row['type'])
+                ->exists();
 
-        DB::table('settings')->insert($data);
+            if (! $exists) {
+                DB::table('settings')->insert($row);
+            }
+        }
 
     }
 }
