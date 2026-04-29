@@ -52,7 +52,17 @@ class StudentRepo {
 
     public function getRecord(array $data)
     {
-        return $this->activeStudents()->where($data)->with('user');
+        return $this->activeStudents()->where($data)->with([
+            'my_class',
+            'section',
+            'my_parent',
+            'dorm',
+            'user',
+            'user.blood_group',
+            'user.nationality',
+            'user.state',
+            'user.lga',
+        ]);
     }
 
     public function getRecordByUserIDs($ids)
