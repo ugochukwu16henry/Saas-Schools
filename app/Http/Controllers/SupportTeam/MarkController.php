@@ -58,11 +58,21 @@ class MarkController extends Controller
 
     public function year_selector($student_id)
     {
+        $student_id = (int) Qs::decodeHash($student_id);
+        if ($student_id <= 0) {
+            return $this->noStudentRecord();
+        }
+
         return $this->verifyStudentExamYear($student_id);
     }
 
     public function year_selected(Request $req, $student_id)
     {
+        $student_id = (int) Qs::decodeHash($student_id);
+        if ($student_id <= 0) {
+            return $this->noStudentRecord();
+        }
+
         if (!$this->verifyStudentExamYear($student_id, $req->year)) {
             return $this->noStudentRecord();
         }
@@ -73,6 +83,11 @@ class MarkController extends Controller
 
     public function show($student_id, $year)
     {
+        $student_id = (int) Qs::decodeHash($student_id);
+        if ($student_id <= 0) {
+            return $this->noStudentRecord();
+        }
+
         /* Prevent Other Students/Parents from viewing Result of others */
         if (Auth::user()->id != $student_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($student_id, Auth::user()->id)) {
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
@@ -109,6 +124,11 @@ class MarkController extends Controller
 
     public function print_view($student_id, $exam_id, $year)
     {
+        $student_id = (int) Qs::decodeHash($student_id);
+        if ($student_id <= 0) {
+            return $this->noStudentRecord();
+        }
+
         /* Prevent Other Students/Parents from viewing Result of others */
         if (Auth::user()->id != $student_id && !Qs::userIsTeamSA() && !Qs::userIsMyChild($student_id, Auth::user()->id)) {
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
