@@ -34,6 +34,17 @@ class SettingController extends Controller
     public function update(SettingUpdate $req)
     {
         $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        if (! $school) {
+            // Ensure tenant scoping exists for settings writes.
+            $fallbackSchoolId = optional(auth()->user())->school_id;
+            if ($fallbackSchoolId) {
+                $school = School::query()->find((int) $fallbackSchoolId);
+                if ($school) {
+                    app()->instance('currentSchool', $school);
+                    view()->share('currentSchool', $school);
+                }
+            }
+        }
 
         $sets = $req->except('_token', '_method', 'logo');
         $sets['lock_exam'] = $sets['lock_exam'] == 1 ? 1 : 0;
@@ -61,12 +72,20 @@ class SettingController extends Controller
             $logo = $req->file('logo');
             $f = Qs::getFileMetaData($logo);
             $f['name'] = 'logo.' . $f['ext'];
-            $f['path'] = $logo->storeAs(Qs::getPublicUploadPath(), $f['name'], 'public');
+            // Store logo per-tenant to prevent cross-school overwrites.
+            // Without this, different schools end up pointing to the same
+            // `uploads/logo.<ext>` physical file, so updating one school
+            // changes what the other school displays.
+            $schoolId = optional($school)->id ?: optional(auth()->user())->school_id;
+            $targetDir = $schoolId
+                ? (Qs::getPublicUploadPath() . 'schools/' . (int) $schoolId . '/')
+                : Qs::getPublicUploadPath(); // fallback for platform-level accounts
+
+            $f['path'] = $logo->storeAs($targetDir, $f['name'], 'public');
             $logo_path = '/storage/' . ltrim($f['path'], '/');
             $this->setting->update('logo', $logo_path);
 
             // Keep school.logo aligned with settings logo used across tenant layouts.
-            $schoolId = optional(auth()->user())->school_id;
             if ($schoolId) {
                 School::where('id', $schoolId)->update(['logo' => $logo_path]);
             }
