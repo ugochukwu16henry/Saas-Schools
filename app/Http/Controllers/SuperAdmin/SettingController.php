@@ -58,6 +58,32 @@ class SettingController extends Controller
             $this->setting->update($keys[$i], $values[$i]);
         }
 
+        // Keep core school profile fields in sync with tenant settings so
+        // identity/verification pages always reflect latest school updates.
+        if ($school) {
+            $schoolUpdate = [];
+
+            if (array_key_exists('system_name', $sets) && trim((string) $sets['system_name']) !== '') {
+                $schoolUpdate['name'] = (string) $sets['system_name'];
+            }
+
+            if (array_key_exists('system_email', $sets)) {
+                $schoolUpdate['email'] = trim((string) $sets['system_email']) !== '' ? (string) $sets['system_email'] : null;
+            }
+
+            if (array_key_exists('phone', $sets)) {
+                $schoolUpdate['phone'] = trim((string) $sets['phone']) !== '' ? (string) $sets['phone'] : null;
+            }
+
+            if (array_key_exists('address', $sets)) {
+                $schoolUpdate['address'] = trim((string) $sets['address']) !== '' ? (string) $sets['address'] : null;
+            }
+
+            if (!empty($schoolUpdate)) {
+                School::where('id', (int) $school->id)->update($schoolUpdate);
+            }
+        }
+
         if ($req->hasFile('logo')) {
             $logo = $req->file('logo');
             $f = Qs::getFileMetaData($logo);

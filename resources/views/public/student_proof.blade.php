@@ -92,7 +92,11 @@
                 @else
                     <div class="status-ok">Verified Student Record</div>
                     @php
-                        $schoolLogo = trim((string) (optional($school)->logo ?? ''));
+                        $schoolName = trim((string) ($schoolProfile['name'] ?? optional($school)->name ?? ''));
+                        $schoolEmail = trim((string) ($schoolProfile['email'] ?? optional($school)->email ?? ''));
+                        $schoolPhone = trim((string) ($schoolProfile['phone'] ?? optional($school)->phone ?? ''));
+                        $schoolAddress = trim((string) ($schoolProfile['address'] ?? optional($school)->address ?? ''));
+                        $schoolLogo = trim((string) ($schoolProfile['logo'] ?? optional($school)->logo ?? ''));
                         if ($schoolLogo === '') {
                             $schoolLogo = asset('global_assets/images/riseflow-logo.png');
                         }
@@ -104,11 +108,12 @@
                         </div>
                         <div>
                             <div class="line"><span class="label">Student Full Name:</span> {{ $student->name ?: 'N/A' }}</div>
+                            <div class="line"><span class="label">Student Status:</span> {{ $studentStatus ?? 'Active Student' }}</div>
                             <div class="line"><span class="label">Admission Number:</span> {{ optional($record)->adm_no ?: 'N/A' }}</div>
-                            <div class="line"><span class="label">School Name:</span> {{ optional($school)->name ?: 'N/A' }}</div>
-                            <div class="line"><span class="label">School Email:</span> {{ optional($school)->email ?: 'N/A' }}</div>
-                            <div class="line"><span class="label">School Phone:</span> {{ optional($school)->phone ?: 'N/A' }}</div>
-                            <div class="line"><span class="label">School Address:</span> {{ optional($school)->address ?: 'N/A' }}</div>
+                            <div class="line"><span class="label">School Name:</span> {{ $schoolName !== '' ? $schoolName : 'N/A' }}</div>
+                            <div class="line"><span class="label">School Email:</span> {{ $schoolEmail !== '' ? $schoolEmail : 'N/A' }}</div>
+                            <div class="line"><span class="label">School Phone:</span> {{ $schoolPhone !== '' ? $schoolPhone : 'N/A' }}</div>
+                            <div class="line"><span class="label">School Address:</span> {{ $schoolAddress !== '' ? $schoolAddress : 'N/A' }}</div>
                             <div class="muted">Verification Token: {{ $token }}</div>
                         </div>
                     </div>

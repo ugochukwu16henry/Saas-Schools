@@ -35,13 +35,13 @@
                             </tr>
                             <tr>
                                 <td class="font-weight-bold">Class</td>
-                                <td>{{ $sr->my_class->name.' '.$sr->section->name }}</td>
+                                <td>{{ (optional($sr->my_class)->name ?: 'N/A') . ' ' . (optional($sr->section)->name ?: '') }}</td>
                             </tr>
                             @if($sr->my_parent_id)
                                 <tr>
                                     <td class="font-weight-bold">Parent</td>
                                     <td>
-                                        <span><a target="_blank" href="{{ route('users.show', Qs::hash($sr->my_parent_id)) }}">{{ $sr->my_parent->name }}</a></span>
+                                        <span><a target="_blank" href="{{ route('users.show', Qs::hash($sr->my_parent_id)) }}">{{ optional($sr->my_parent)->name ?: 'N/A' }}</a></span>
                                     </td>
                                 </tr>
                             @endif
@@ -76,31 +76,31 @@
                             @if($sr->user->bg_id)
                             <tr>
                                 <td class="font-weight-bold">Blood Group</td>
-                                <td>{{$sr->user->blood_group->name }}</td>
+                                <td>{{ optional($sr->user->blood_group)->name ?: 'N/A' }}</td>
                             </tr>
                             @endif
                             @if($sr->user->nal_id)
                             <tr>
                                 <td class="font-weight-bold">Nationality</td>
-                                <td>{{$sr->user->nationality->name }}</td>
+                                <td>{{ optional($sr->user->nationality)->name ?: 'N/A' }}</td>
                             </tr>
                             @endif
                             @if($sr->user->state_id)
                             <tr>
                                 <td class="font-weight-bold">State</td>
-                                <td>{{$sr->user->state->name }}</td>
+                                <td>{{ optional($sr->user->state)->name ?: 'N/A' }}</td>
                             </tr>
                             @endif
                             @if($sr->user->lga_id)
                             <tr>
                                 <td class="font-weight-bold">LGA</td>
-                                <td>{{$sr->user->lga->name }}</td>
+                                <td>{{ optional($sr->user->lga)->name ?: 'N/A' }}</td>
                             </tr>
                             @endif
                             @if($sr->dorm_id)
                                 <tr>
                                     <td class="font-weight-bold">Dormitory</td>
-                                    <td>{{$sr->dorm->name.' '.$sr->dorm_room_no }}</td>
+                                    <td>{{ (optional($sr->dorm)->name ?: 'N/A') . ' ' . ($sr->dorm_room_no ?: '') }}</td>
                                 </tr>
                             @endif
 
