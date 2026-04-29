@@ -364,7 +364,7 @@ Route::group(['middleware' => ['auth', 'tenant', 'subscription']], function () {
 });
 
 /************************ SUPER ADMIN ****************************/
-Route::group(['namespace' => 'SuperAdmin', 'middleware' => 'super_admin', 'prefix' => 'super_admin'], function () {
+Route::group(['namespace' => 'SuperAdmin', 'middleware' => ['super_admin', 'tenant'], 'prefix' => 'super_admin'], function () {
 
     Route::get('/settings', 'SettingController@index')->name('settings');
     Route::put('/settings', 'SettingController@update')->middleware('ability:school.settings.manage')->name('settings.update');
