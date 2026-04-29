@@ -22,6 +22,10 @@
         <div class="row">
             <div class="col-md-3 mb-3">
                 <img src="{{ $student->photo }}" alt="Student photo" class="img-fluid rounded border" style="max-height: 180px;">
+                <div class="mt-3 p-2 border rounded bg-light text-center">
+                    <div id="student-verification-qrcode" class="d-inline-block"></div>
+                    <div class="small text-muted mt-2">Scan to verify this student</div>
+                </div>
             </div>
             <div class="col-md-9">
                 <h5 class="mb-2">{{ $student->name }}</h5>
@@ -41,4 +45,25 @@
         @endif
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script src="{{ asset('global_assets/js/plugins/qrcodejs/qrcode.min.js') }}"></script>
+<script>
+    (function() {
+        var el = document.getElementById('student-verification-qrcode');
+        if (!el || typeof QRCode === 'undefined') {
+            return;
+        }
+
+        new QRCode(el, {
+            text: @json($verificationUrl ?? ''),
+            width: 140,
+            height: 140,
+            colorDark: '#111111',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    })();
+</script>
 @endsection

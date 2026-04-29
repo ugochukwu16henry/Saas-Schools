@@ -84,6 +84,16 @@ class StudentTransferService
             ->limit(20)
             ->get();
 
+        $verificationUrl = null;
+        try {
+            $token = app(StudentQrService::class)->ensureTokenForStudent($student)->token;
+            if ($token) {
+                $verificationUrl = route('students.verify.public', $token);
+            }
+        } catch (Throwable $e) {
+            $verificationUrl = null;
+        }
+
         return [
             'transfer' => $transfer,
             'student' => $student,
@@ -98,6 +108,7 @@ class StudentTransferService
             'statusHistory' => $transfer->status_history ?: [],
             'transcriptUrl' => route('students.transcript.show', $student->id),
             'transcriptDownloadUrl' => route('students.transcript.download', $student->id),
+            'verificationUrl' => $verificationUrl,
         ];
     }
 

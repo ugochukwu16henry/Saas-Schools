@@ -45,6 +45,14 @@
                     <td>
                         @if($qrToken)
                         <a target="_blank" href="{{ route('students.verify.public', $qrToken) }}" class="btn btn-sm btn-outline-primary">Verify</a>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary ml-1 js-show-student-qr"
+                            data-student-name="{{ $s->user->name }}"
+                            data-verify-url="{{ route('students.verify.public', $qrToken) }}"
+                        >
+                            QR
+                        </button>
                         @else
                         <span class="text-muted">N/A</span>
                         @endif
@@ -76,4 +84,70 @@
 
 {{--Student List Ends--}}
 
+<div class="modal fade" id="studentQrModal" tabindex="-1" role="dialog" aria-labelledby="studentQrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="studentQrModalLabel">Student Verification QR</h6>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="parent-student-qrcode" class="d-inline-block mb-2"></div>
+                <div class="small text-muted mb-1" id="parent-student-qr-name"></div>
+                <a id="parent-student-qr-link" href="#" target="_blank" class="small"></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('scripts')
+<script src="{{ asset('global_assets/js/plugins/qrcodejs/qrcode.min.js') }}"></script>
+<script>
+    (function() {
+        var qrButtons = Array.prototype.slice.call(document.querySelectorAll('.js-show-student-qr'));
+        if (!qrButtons.length || typeof QRCode === 'undefined') {
+            return;
+        }
+
+        var qrContainer = document.getElementById('parent-student-qrcode');
+        var qrName = document.getElementById('parent-student-qr-name');
+        var qrLink = document.getElementById('parent-student-qr-link');
+        var qrModal = $('#studentQrModal');
+
+        qrButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var verifyUrl = btn.getAttribute('data-verify-url') || '';
+                var studentName = btn.getAttribute('data-student-name') || 'Student';
+
+                if (!verifyUrl || !qrContainer) {
+                    return;
+                }
+
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, {
+                    text: verifyUrl,
+                    width: 160,
+                    height: 160,
+                    colorDark: '#111111',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                if (qrName) {
+                    qrName.textContent = studentName;
+                }
+                if (qrLink) {
+                    qrLink.textContent = verifyUrl;
+                    qrLink.setAttribute('href', verifyUrl);
+                }
+
+                qrModal.modal('show');
+            });
+        });
+    })();
+</script>
 @endsection

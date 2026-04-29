@@ -15,6 +15,12 @@
         <div class="row">
             <div class="col-md-3 mb-3">
                 <img src="{{ optional($student)->photo }}" alt="Student photo" class="img-fluid rounded border" style="max-height: 220px; object-fit: cover;">
+                @if(!empty($verificationUrl))
+                <div class="mt-3 p-2 border rounded bg-light text-center">
+                    <div id="transfer-student-qrcode" class="d-inline-block"></div>
+                    <div class="small text-muted mt-2">Scan to verify student profile</div>
+                </div>
+                @endif
             </div>
             <div class="col-md-9 mb-3">
                 <h5 class="mb-2">{{ optional($student)->name }}</h5>
@@ -28,6 +34,9 @@
                 <p class="mb-1"><strong>Status:</strong> <span class="badge badge-info">{{ strtoupper(optional($transfer)->status) }}</span></p>
                 <p class="mb-1"><strong>Class:</strong> {{ optional(optional($studentRecord)->my_class)->name ?: 'N/A' }} {{ optional(optional($studentRecord)->section)->name ?: '' }}</p>
                 <p class="mb-0"><strong>Session:</strong> {{ optional($studentRecord)->session ?: optional($transfer)->from_session ?: 'N/A' }}</p>
+                @if(!empty($verificationUrl))
+                <p class="mb-0 mt-2"><strong>Verification URL:</strong> <a href="{{ $verificationUrl }}" target="_blank">{{ $verificationUrl }}</a></p>
+                @endif
             </div>
         </div>
 
@@ -212,9 +221,10 @@
         @php
         $isReceivingSchool = (int) optional($school)->id === (int) optional($transfer)->to_school_id;
         $isSendingSchool = (int) optional($school)->id === (int) optional($transfer)->from_school_id;
+        $requiresAcceptanceChecklist = (bool) config('transfers.policies.require_acceptance_checklist', true);
         @endphp
 
-        @if(optional($transfer)->status === 'pending' && $isReceivingSchool)
+        @if(optional($transfer)->status === 'pending' && $isReceivingSchool && $requiresAcceptanceChecklist)
         <div class="alert alert-warning border mb-3">
             <h6 class="font-weight-semibold mb-2">Verification Checklist (Required Before Accept)</h6>
             <div class="form-check mb-1">
@@ -237,14 +247,14 @@
             @if(optional($transfer)->status === 'pending' && $isReceivingSchool)
             <form method="post" action="{{ route('transfers.accept', $transfer) }}" class="mr-2 mb-2">
                 @csrf @method('PATCH')
-                <input type="hidden" name="acceptance_checklist" id="acceptance-checklist" value="0">
+                <input type="hidden" name="acceptance_checklist" id="acceptance-checklist" value="{{ $requiresAcceptanceChecklist ? '0' : '1' }}">
                 <div class="form-check mt-2 mb-1">
                     <input class="form-check-input" type="checkbox" id="defer-class-assignment" name="defer_class_assignment" value="1">
                     <label class="form-check-label" for="defer-class-assignment">
                         If destination class isn’t created yet, accept now and assign class later.
                     </label>
                 </div>
-                <button type="submit" id="accept-transfer-btn" class="btn btn-success btn-sm" disabled>Accept Transfer</button>
+                <button type="submit" id="accept-transfer-btn" class="btn btn-success btn-sm" {{ $requiresAcceptanceChecklist ? 'disabled' : '' }}>Accept Transfer</button>
             </form>
 
             <form method="post" action="{{ route('transfers.reject', $transfer) }}" class="mr-2 mb-2">
@@ -264,7 +274,31 @@
     </div>
 </div>
 
-@if(optional($transfer)->status === 'pending' && $isReceivingSchool)
+@endsection
+
+@section('scripts')
+@if(!empty($verificationUrl))
+<script src="{{ asset('global_assets/js/plugins/qrcodejs/qrcode.min.js') }}"></script>
+<script>
+    (function() {
+        var el = document.getElementById('transfer-student-qrcode');
+        if (!el || typeof QRCode === 'undefined') {
+            return;
+        }
+
+        new QRCode(el, {
+            text: @json($verificationUrl),
+            width: 128,
+            height: 128,
+            colorDark: '#111111',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    })();
+</script>
+@endif
+
+@if(optional($transfer)->status === 'pending' && $isReceivingSchool && $requiresAcceptanceChecklist)
 <script>
     (function() {
         var checks = Array.prototype.slice.call(document.querySelectorAll('.transfer-verify-check'));

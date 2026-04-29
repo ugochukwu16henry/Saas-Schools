@@ -28,6 +28,7 @@ class StudentVerificationController extends Controller
             'record' => $record,
             'school' => $currentSchool,
             'token' => $qrToken->token,
+            'verificationUrl' => route('students.verify.public', $qrToken->token),
         ]);
     }
 }
