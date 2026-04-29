@@ -274,9 +274,9 @@
                 return check.checked;
             });
             acceptBtn.disabled = !allChecked;
-        }
-        if (checklistField) {
-            checklistField.value = allChecked ? '1' : '0';
+            if (checklistField) {
+                checklistField.value = allChecked ? '1' : '0';
+            }
         }
 
         checks.forEach(function(check) {

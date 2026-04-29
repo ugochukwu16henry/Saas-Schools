@@ -174,6 +174,114 @@ class StudentTransferPhase4Test extends TestCase
         $this->assertSame($fromSchool->id, (int) $student->fresh()->school_id);
     }
 
+    public function testTransferInboxRendersStudentPhotoFromSendingSchool()
+    {
+        $fromSchool = $this->createSchool('From School', 'from-school', 'from@example.test');
+        $toSchool = $this->createSchool('To School', 'to-school', 'to@example.test');
+
+        $this->bindSchool($fromSchool);
+        $fromClass = MyClass::query()->create(['name' => 'Grade 6']);
+        $fromSection = Section::query()->create([
+            'name' => 'A',
+            'my_class_id' => $fromClass->id,
+            'active' => 1,
+        ]);
+
+        $student = $this->createUser('Student Demo', 'student-photo@example.test', 'student', $fromSchool->id);
+        $student->update(['photo' => 'uploads/student/photo1.jpg']);
+
+        $parent = $this->createUser('Parent Demo', 'parent-photo@example.test', 'parent', $fromSchool->id);
+
+        StudentRecord::query()->create([
+            'user_id' => $student->id,
+            'my_class_id' => $fromClass->id,
+            'section_id' => $fromSection->id,
+            'my_parent_id' => $parent->id,
+            'session' => '2025/2026',
+            'adm_no' => 'ADM-' . strtoupper(substr(uniqid('', true), -6)),
+        ]);
+
+        $requester = $this->createUser('Sender Admin', 'sender-admin-photo@example.test', 'super_admin', $fromSchool->id);
+        $receiver = $this->createUser('Receiver Admin', 'receiver-admin-photo@example.test', 'super_admin', $toSchool->id);
+
+        StudentTransfer::query()->create([
+            'student_id' => $student->id,
+            'from_school_id' => $fromSchool->id,
+            'to_school_id' => $toSchool->id,
+            'requested_by' => $requester->id,
+            'accepted_by' => null,
+            'status' => StudentTransfer::STATUS_PENDING,
+            'from_class_id' => $fromClass->id,
+            'from_section_id' => $fromSection->id,
+            'from_session' => '2025/2026',
+            'transfer_note' => 'Transfer for relocation.',
+        ]);
+
+        // View the inbox from the receiving school (student is still in sending school).
+        $this->bindSchool($toSchool);
+
+        $response = $this->actingAs($receiver)->get(route('transfers.inbox'));
+        $response->assertOk();
+
+        // Photo accessor converts `uploads/...` into `/storage/uploads/...`.
+        $this->assertStringContainsString('storage/uploads/student/photo1.jpg', (string) $response->getContent());
+    }
+
+    public function testTransferOutboxRendersStudentPhotoAfterStudentMoved()
+    {
+        $fromSchool = $this->createSchool('From School', 'from-school2', 'from2@example.test');
+        $toSchool = $this->createSchool('To School', 'to-school2', 'to2@example.test');
+
+        // Create student at the receiving school (i.e., after acceptance).
+        $this->bindSchool($toSchool);
+        $toClass = MyClass::query()->create(['name' => 'Grade 7']);
+        $toSection = Section::query()->create([
+            'name' => 'B',
+            'my_class_id' => $toClass->id,
+            'active' => 1,
+        ]);
+
+        $student = $this->createUser('Moved Student', 'moved-student-photo@example.test', 'student', $toSchool->id);
+        $student->update(['photo' => 'uploads/student/photo2.jpg']);
+
+        $parent = $this->createUser('Moved Parent', 'moved-parent-photo@example.test', 'parent', $toSchool->id);
+
+        StudentRecord::query()->create([
+            'user_id' => $student->id,
+            'my_class_id' => $toClass->id,
+            'section_id' => $toSection->id,
+            'my_parent_id' => $parent->id,
+            'session' => '2025/2026',
+            'adm_no' => 'ADM-' . strtoupper(substr(uniqid('', true), -6)),
+        ]);
+
+        $requester = $this->createUser('Sender Admin', 'sender-admin-photo2@example.test', 'super_admin', $fromSchool->id);
+        $acceptedBy = $this->createUser('Receiver Admin', 'receiver-admin-photo2@example.test', 'super_admin', $toSchool->id);
+
+        StudentTransfer::query()->create([
+            'student_id' => $student->id,
+            'from_school_id' => $fromSchool->id,
+            'to_school_id' => $toSchool->id,
+            'requested_by' => $requester->id,
+            'accepted_by' => $acceptedBy->id,
+            'status' => StudentTransfer::STATUS_ACCEPTED,
+            'from_class_id' => $toClass->id,
+            'from_section_id' => $toSection->id,
+            'from_session' => '2025/2026',
+            'transferred_at' => now(),
+            'transfer_note' => 'Accepted transfer.',
+        ]);
+
+        // View the outbox from the sending school (student has already moved).
+        $this->bindSchool($fromSchool);
+
+        $outboxViewer = $this->createUser('Outbox Viewer', 'outbox-viewer@example.test', 'super_admin', $fromSchool->id);
+        $response = $this->actingAs($outboxViewer)->get(route('transfers.outbox'));
+        $response->assertOk();
+
+        $this->assertStringContainsString('storage/uploads/student/photo2.jpg', (string) $response->getContent());
+    }
+
     private function createSchool(string $name, string $slug, string $email): School
     {
         $suffix = strtolower(substr(uniqid('', true), -8));

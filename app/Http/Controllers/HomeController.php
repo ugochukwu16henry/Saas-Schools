@@ -62,9 +62,14 @@ class HomeController extends Controller
 
             $receivedTransfersQuery = StudentTransfer::query()
                 ->with([
-                    'student.student_record.my_class',
-                    'student.student_record.section',
-                    'student.student_record.my_parent',
+                    // Keep student photo/name visible even if tenant scope differs.
+                    'student' => function ($q) {
+                        $q->withoutGlobalScopes()->with([
+                            'student_record' => function ($srq) {
+                                $srq->withoutGlobalScopes()->with(['my_class', 'section', 'my_parent']);
+                            },
+                        ]);
+                    },
                     'fromSchool:id,name',
                     'acceptedBy:id,name',
                 ])

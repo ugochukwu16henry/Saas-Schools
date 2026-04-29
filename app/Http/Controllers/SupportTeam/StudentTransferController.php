@@ -86,7 +86,21 @@ class StudentTransferController extends Controller
         $school = $this->currentSchool();
 
         $transfers = StudentTransfer::query()
-            ->with(['student.student_record.my_parent', 'student.student_record.my_class', 'student.student_record.section', 'fromSchool', 'requestedBy'])
+            ->with([
+                // The transfer inbox is viewed by the receiving school, but the student's
+                // tenant scope may still point to the sending school (pending) or have
+                // already moved (accepted). We must load the student unscoped so
+                // photo/name always render.
+                'student' => function ($q) {
+                    $q->withoutGlobalScopes()->with([
+                        'student_record' => function ($srq) {
+                            $srq->withoutGlobalScopes()->with(['my_parent', 'my_class', 'section']);
+                        },
+                    ]);
+                },
+                'fromSchool',
+                'requestedBy',
+            ])
             ->where('to_school_id', $school->id)
             ->latest('id')
             ->paginate(20);
@@ -99,7 +113,21 @@ class StudentTransferController extends Controller
         $school = $this->currentSchool();
 
         $transfers = StudentTransfer::query()
-            ->with(['student.student_record.my_parent', 'student.student_record.my_class', 'student.student_record.section', 'toSchool', 'requestedBy', 'acceptedBy'])
+            ->with([
+                // The outbox is viewed by the sending school, but the student may already
+                // have moved to the receiving school (accepted). Load unscoped so the
+                // student's photo always renders.
+                'student' => function ($q) {
+                    $q->withoutGlobalScopes()->with([
+                        'student_record' => function ($srq) {
+                            $srq->withoutGlobalScopes()->with(['my_parent', 'my_class', 'section']);
+                        },
+                    ]);
+                },
+                'toSchool',
+                'requestedBy',
+                'acceptedBy',
+            ])
             ->where('from_school_id', $school->id)
             ->latest('id')
             ->paginate(20);
