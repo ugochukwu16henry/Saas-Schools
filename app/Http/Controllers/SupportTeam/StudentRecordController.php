@@ -139,6 +139,9 @@ class StudentRecordController extends Controller
         }
 
         $data['sr'] = $this->student->getRecord(['id' => $sr_id])->first();
+        if (!$data['sr']) {
+            return redirect(route('dashboard'))->with('pop_error', __('msg.rnf'));
+        }
 
         /* Prevent Other Students/Parents from viewing Profile of others */
         if (Auth::user()->id != $data['sr']->user_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($data['sr']->user_id, Auth::user()->id)) {
@@ -156,6 +159,9 @@ class StudentRecordController extends Controller
         }
 
         $data['sr'] = $this->student->getRecord(['id' => $sr_id])->first();
+        if (!$data['sr']) {
+            return redirect(route('dashboard'))->with('pop_error', __('msg.rnf'));
+        }
         $data['my_classes'] = $this->my_class->all();
         $data['parents'] = $this->user->getUserByType('parent');
         $data['dorms'] = $this->student->getAllDorms();
@@ -172,6 +178,9 @@ class StudentRecordController extends Controller
         }
 
         $sr = $this->student->getRecord(['id' => $sr_id])->first();
+        if (!$sr) {
+            return Qs::goWithDanger();
+        }
         $d =  $req->only(Qs::getUserRecord());
         $d['name'] = ucwords($req->name);
 
@@ -203,6 +212,9 @@ class StudentRecordController extends Controller
         }
 
         $sr = $this->student->getRecord(['user_id' => $st_id])->first();
+        if (!$sr || !$sr->user) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
         $path = Qs::getUploadPath('student') . $sr->user->code;
         Storage::disk('public')->exists($path) ? Storage::disk('public')->deleteDirectory($path) : false;
         $this->user->delete($sr->user->id);
